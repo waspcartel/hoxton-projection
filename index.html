@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investment Projection Tool — Hoxton Wealth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --deep-green:   #033839;
+      --slate:        #527C7E;
+      --slate-shade2: #3C5958;
+      --slate-tint1:  #709394;
+      --grey-green:   #D7E5E3;
+      --grey-green-shade2: #B7CCCA;
+      --mint:         #B8F4EF;
+      --turquoise:    #1AB0C4;
+      --white:        #FFFFFF;
+      --off-white:    #F5F7F7;
+      --border:       #D7E5E3;
+      --text-dark:    #022829;
+      --text-mid:     #527C7E;
+      --text-light:   #709394;
+      --error:        #DB3532;
+      --warning:      #ED8128;
+      --success:      #18B566;
+
+      /* Chart palette from brand tertiary */
+      --chart-1: #033839;
+      --chart-2: #1AB0C4;
+      --chart-3: #FFA766;
+      --chart-4: #AF9BE0;
+      --chart-5: #196695;
+      --chart-6: #18B566;
+      --chart-7: #9FBCF3;
+      --chart-8: #F5B8A0;
+      --chart-9: #527C7E;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--off-white);
+      color: var(--text-dark);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────── */
+    header {
+      background: var(--deep-green);
+      color: white;
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(3,56,57,0.3);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+    }
+    .header-subtitle {
+      font-size: 0.75rem;
+      color: var(--mint);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* ── LEFT PANEL ──────────────────────────────────────── */
+    .left-panel {
+      background: white;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── RIGHT PANEL ─────────────────────────────────────── */
+    .right-panel {
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── CARDS ───────────────────────────────────────────── */
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--grey-green);
+    }
+    .card-step {
+      background: var(--deep-green);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--deep-green);
+    }
+
+    /* ── FORM ELEMENTS ───────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text-dark);
+      background: white;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--turquoise);
+      box-shadow: 0 0 0 3px rgba(26,176,196,0.15);
+    }
+    .input-prefix {
+      position: relative;
+    }
+    .input-prefix span {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--slate);
+      font-weight: 600;
+      font-size: 0.88rem;
+      pointer-events: none;
+    }
+    .input-prefix input { padding-left: 22px; }
+
+    /* ── ALLOCATION BUILDER ──────────────────────────────── */
+    .allocation-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .total-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      transition: all 0.2s;
+    }
+    .total-badge.valid   { background: #d4f5e5; color: #067F42; }
+    .total-badge.invalid { background: #fde8e8; color: var(--error); }
+
+    .preset-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .btn-preset {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1.5px solid var(--slate);
+      background: white;
+      color: var(--slate);
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .btn-preset:hover {
+      background: var(--deep-green);
+      color: white;
+      border-color: var(--deep-green);
+    }
+    .btn-preset.active {
+      background: var(--deep-green);
+      color: white;
+      border-color: var(--deep-green);
+    }
+
+    .asset-row {
+      display: grid;
+      grid-template-columns: 1fr 90px 52px;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--off-white);
+    }
+    .asset-row:last-child { border-bottom: none; }
+    .asset-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .asset-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .asset-ticker {
+      font-size: 0.67rem;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      appearance: none;
+      background: var(--grey-green);
+      cursor: pointer;
+      outline: none;
+      border: none;
+      padding: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--deep-green);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .asset-pct-input {
+      width: 52px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 5px;
+    }
+
+    /* ── PROJECTION MODE ─────────────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .mode-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--slate);
+      border: none;
+      background: white;
+    }
+    .mode-tab.active {
+      background: var(--deep-green);
+      color: white;
+    }
+
+    .mode-panel { display: none; }
+    .mode-panel.active { display: block; }
+
+    .historical-years-info {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 6px;
+    }
+
+    /* ── BUTTONS ─────────────────────────────────────────── */
+    .btn-calculate {
+      width: 100%;
+      padding: 12px;
+      background: var(--deep-green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .btn-calculate:hover { background: var(--slate-shade2); }
+
+    /* ── SUMMARY CARDS ───────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .summary-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      text-align: center;
+    }
+    .summary-card.highlight {
+      background: var(--deep-green);
+      border-color: var(--deep-green);
+      color: white;
+    }
+    .summary-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .summary-card.highlight .summary-label { color: var(--mint); }
+    .summary-value {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--deep-green);
+      line-height: 1.2;
+    }
+    .summary-card.highlight .summary-value { color: white; }
+    .summary-sub {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .summary-card.highlight .summary-sub { color: var(--grey-green); }
+
+    /* ── CHARTS ──────────────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+    }
+    .chart-wrapper {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+    }
+    .chart-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--deep-green);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--grey-green);
+    }
+    .chart-canvas-wrap {
+      position: relative;
+    }
+
+    /* ── DATA TABLE ──────────────────────────────────────── */
+    .table-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--slate);
+      user-select: none;
+      padding: 8px 0;
+    }
+    .table-toggle:hover { color: var(--deep-green); }
+    .toggle-icon { transition: transform 0.2s; font-size: 0.7rem; }
+    .toggle-icon.open { transform: rotate(90deg); }
+    .data-table-wrap { overflow: hidden; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    thead th {
+      background: var(--deep-green);
+      color: white;
+      padding: 8px 10px;
+      text-align: right;
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    thead th:first-child { text-align: left; border-radius: 0; }
+    tbody tr:nth-child(even) { background: var(--off-white); }
+    tbody tr:hover { background: var(--grey-green); }
+    tbody td {
+      padding: 7px 10px;
+      text-align: right;
+      color: var(--text-dark);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td:first-child { text-align: left; font-weight: 600; color: var(--slate); }
+    tbody tr:last-child td { font-weight: 700; color: var(--deep-green); background: #e8f4f0; }
+
+    /* ── SCENARIO NOTE ───────────────────────────────────── */
+    .scenario-note {
+      background: linear-gradient(135deg, var(--grey-green), var(--mint));
+      border: 1px solid var(--slate-tint1);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: var(--text-dark);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .scenario-note .note-icon { font-size: 1rem; flex-shrink: 0; }
+
+    /* ── EMPTY STATE ─────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      gap: 1rem;
+      color: var(--text-light);
+    }
+    .empty-icon { font-size: 3rem; opacity: 0.4; }
+    .empty-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.1rem;
+      color: var(--slate);
+    }
+    .empty-text { font-size: 0.82rem; max-width: 280px; }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      background: var(--deep-green);
+      color: var(--grey-green);
+      padding: 1.5rem 2rem;
+      font-size: 0.72rem;
+      line-height: 1.7;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .footer-disclaimer {
+      margin-bottom: 1rem;
+      color: var(--slate-tint1);
+    }
+    .footer-credit {
+      color: var(--mint);
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    /* ── HELPERS ─────────────────────────────────────────── */
+    .allocation-warning {
+      font-size: 0.73rem;
+      color: var(--error);
+      font-weight: 500;
+      margin-top: 4px;
+      display: none;
+    }
+    .allocation-warning.show { display: block; }
+
+    /* Returns badge */
+    .return-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .return-badge.pos { background: #d4f5e5; color: #067F42; }
+    .return-badge.neg { background: #fde8e8; color: var(--error); }
+
+    /* ── PRINT BUTTON ────────────────────────────────────── */
+    .btn-print {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: white;
+      color: var(--deep-green);
+      border: 2px solid var(--deep-green);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+    }
+    .btn-print:hover {
+      background: var(--deep-green);
+      color: white;
+    }
+    .btn-print svg { flex-shrink: 0; }
+    .print-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      padding: 0.5rem 0;
+    }
+    .print-hint {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════ -->
+<header>
+  <div class="header-logo">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAA4CAYAAADTh677AAAjpUlEQVR42u1debhcVZH/Vfd7WQlLWLKAIquyyBIgYXFBUYRhHBaFMS4oIwOMgp+iuI0zOOo4DKOMjOAQUGBAUEEEAoIiW9QsBIgQFgmLQAQCAUIICUne6+7f/HGq0tUnt2/f7r7vJbzc+r7+Onl971nq1KntVNUBCiiggAIKKKCAAgoooIACCiiggAIKKGC9BllfBkJSuhgPRYRDcSwFFFBAAQU0Z9YlkqWcmH4e4ymvD20UUEABBRQWSAumb9o6yXEAttQxZRkX9bnVIrIgbq+b8ZAcCeAtAHpdP1nGAwALReTVbsdSQAEFFFBAC4uB5JtJ/pzkUnYGVZJ/JPkmktKJNePfI/kVkk9qu53AcySnmnVVrHQBBRRQQL7Co6Sficqsu4GKfl+vbZc7GY9+T+tyLDX97iO5bSFECiiggALyFyBl/b5UGe4qx3w7sUAqJBeRHO6tmzbHcohj/tUuhEi/fh/TqUAroIACCngjwKBrx3o2UCW5GYCjEM4OhqGLqCcAZQBPAegjWerw7OGTqJ93dIOXMoAagCfc+AoooIACCgGSA5TVQngvgE2U2XZzmG8MeroKjsxzcsJsNID36zi6sRhsLg8BmK/t1woyK6CAAgoBkpMRooz+aGX+3WropvFPd0y83fm/E8D4HIRZLRJmhfuqgAIKGLLQM6iSo67xj8lR4y8BuB/Awx1o/CYsTJjV0L37CgCuj6yjbvFW0nHRjbvaZchyWdsxtx1FpDqUiT3Co619daiGWzeZL9qddwKteOtfANSy7jv1PpSjttpu5w2A+2a8LXWfpaxZu+8NCk57BhmvJQBVAO8CsJX+Ow8Bcr3mb/QAqLQhzCokRwA4HN2ffdhYFgD4kwnLPJCmBJArEQx1YTFYeNwQ5psnrajQqmwAuO9onp2u2bqi7cEWICZRj0F+7iui7r5qpz0TZgcAeFMO1oe9f6MKpp5uNwrJslpsxyEEHFTdvM8TkVn2TBtCkyQ3AnAOgNE67jKAZ0XkjCGqiRseTwJwsOLRFIZ/F5GHNPhiqGi/JRGpkfwSgEk631JEq18UkcVpCa+unc8COKhJO2UAN4nIT9No0bW1PYBvN9k7d4rIRW/ktXDz3A3AP2Ntt3gFwOki8nKUSG00egSAjzlc27nucwDO0P3r37P+TlNeZu/Z2swRkf95w9O3SxwcSfIZF4LLLsJ3SfIhkuV2S5kogwfJc6Pw227H8w5n9neLMxvj9xP6+5R/ps012DwB988MYdeV4fHnCXg8NK/1Wg/n+90Uej2i1bw1wVZIPtaC9mc6N0qrMX06pZ3PtUvT66Oyot8fSJnnWjliDj9fT0lQFr+Po/5uaPLerweSvgfzEN36OgjA1jlp/ABwg2o95TYZaZVkL4AjcsCFzeVJAHOj8eUBK1RzWaWfCoDV3dA5gCWunQqAVzYAr85yh8c+/Xf/UJSZ+n2taqT9OteKo5/9Iq9AkiZNANvofq0kfKzdnUhurJpwK0Vu32gcflw3DsDeWVdguOmLcLWixfxWRvjpy7g/X4ves+/XBoOpD6b7yh9Y5zH26zpxX+nm2A/ADjkJM6op30eyJ+eD2ZK6G/2n2zpm5ai9DSFibCDwuD6C7a0HATyPUNPN5t6r35NbMGvDy94ARur/Y9z1Kt1sCWC3Fjyl6gSIH4eN6zEATw2h0PckfNmnXRrNsj+bvVca6A01KO4rPRcYBuBvkN+B9eMA7u3gwNo2x5E5aTwlbfPaDoRZAQXky7mCn7wsIisBzIxo3Gh/D5IjU6wG+9sBLWja9t2UZhaNO3vbCsDbIt5j45qhgqMIfX+DaWSD2c8UhCq3ebmvfi0i/R0QXVV9gh/M0X31LIBZQ8gEz6QYaE2zsvuUspxHOf/6mk8XY1irnej/qe37Z7KOo5u5t5pDxv5a9WW/3ZawFwlgIoCdUtxYRsP7p7m6HByYImhsf+0OYCM0Hizb961pgqoJvjvGeZvrmns/8dq3olHDVSe0mtBn0vw6amuwDqtscEdFTLdbgdS2xu+iHfZSbYjoXoAIgJtFZKW6r4ZsmKKLN7c8gmYbvqzacLWZlpzUdjvui7Tnffska6oBJ42V+lutldvRxfZbbD0z4qilxZBGrw6PbKOvNZo91g6Xr+renwRgPupRO95iqJHcBMAeLZQs+/s+JHtFpD8hssv2/37R/rdk2+UA5iQpX63mn5Xe8qDpTta2VdcumiqNRo1OajG/S3k8Sfh42m02N8sdydTwYAmQqkYZ5KnxL2xGdG24rwThoKkbPGwQ7itlniXdoDX925YAJgDYVPGwAsBihJDgitfuPdEqoY5EOOgruc1UyXqPimNyZceMCGC4tuvvlelJSezqUdoskzTms9YmcyGqNq/RCIfLmwMYgRCMsATAcyKyzOGonDEBrIHGdW6Gb5DcGMCbAYzVeb2qeH7R9bVGoDrX1GMIuUm7JihuUwBc2oSmq2oxjE14rw+hfp3fy9sinCc+gnoiG6I9MTlhL5cBzBORF/z4LULJzb+s85+IUAJJACwDsAjA0+qJSKS3Nml6rK7rFgBG6dhXAHhR8f1q1rXNwn+dwEijURMA/n4iZuU32m7N4XYbXa9NdZ2XAHhKRBa3q8z1DALjsVIj71CTOQ/3lWn8q9vR+A2RyjA+koMwM+tlMYDfD1X3lSOmKsmdEOLUDwPwViVCD6sALCT5RwA/E5FbQxNrLD9jmNOUJvqN2ZP8gohMz8B0ra33ALjQtCZlarMQCmP+NnKXEuGwF7pJTbj8n44ZTpk4D8A5rh/7HgXgwwA+BGAfhPI35YgeXiB5nyoUV4nI0qTN6Ob4EQDfQT1nqAfA2QAuUCFwCIBTEKIXJ0SoeEX7uhLAZRrA4XFXVqE8IxIgNvd9nEWSpGRNSfAY9AG4AsAJkUVTRjggf8RbNK76RC+AvaI9Z8zvdvf3mp8DyYMAfBzAewBs5wSXQT+Ap3WOV4jIHZ7eWiggVJreTtfhcMXT5k1eW0xyPkLe2ZWay9FJfoXRzL/o3Izu6PZTOcLVdqoIwAmRZQDeB+ClFBdjWS2bXg39/ySAPRFywDwsJXkvgMsA/NQpMLV1zXx69fuW6P6ObvMtPuBN1zbH8omcxtKvZegvb3csGcdrseHfcf1ZvspH/TNtCFCQHEtySYSDh1M0ZMvf+R7JFQn3sfhPnF/yO5JvN/y49t5K8vXo2RdJTki7GMzdJbMZyYXR+6tJ7qrPPd3Fun7X6MWN91iSC1rMPaanp0n+gxu3JKztZxP6/4r+9uMm9N+XkLc0j+Se0ZpZHx+K1tquTlimVmSz3IJfRnROks+TnExypWvLxvKjmCbdWHZOwI/RyjsdfVjfO5K8tsn8bR8k5ZHdSHLntP3oxjSc5FkkX2tyz1BaP8+RPCHuJ+F6iGqE81UqsEDywi75z+t6kytI/iLKZ7PvS0iOJzmnyTUYlYSrNGaRfKvHVauzhAHRWkkOU5/oCQi1r/IqXbIIwB+zavzKkMw/O141vG4LJ8K5Sa4103koWh4kJwC4E8AX1azvc9pjOfp4TbWmGtJskkerRiiqHS4A8FH3bL+6DS5pUVXZtKJpCBUE+vV9APi4iDysikIeZ2w2/7MAXAVgZzTmjpQTPqYVV9Tl8hOSF+iYkw5iK4onw0ENwEqSFwD4dBP6txDYmu6pCkK47Z0k9zDt0VkWswC8jsYaVDUAY9RNtWbOkcUwyVsG+u/HAdytLmSvDXsXVTUBl3tp/9XIen8BwJ/qbn6pkjwcwF16ZlpDY76ID1ctRb/VEPK65pB8n1mPCUoUSW6hls9XEA72Kw6X5lqL+/H4ngDgYpL/ktRPRuhza2+lSNiC/9kYagg5I2xBwzsAuEWtyVWOdksJrjCb2wFKSzs7WmrPhWX+wQ4Yqvmzqwj3cxwF4IIcXFd+A92qm2yYmqCp41EXV78ywumoV97t1n1VVv/h7WomDmZ9qZISbZnZT9JEny1nEB5mrYwBcLOavRbxNkz//QsANyEkUPYDGIcQjfNx9bEaQY4G8EuS7xeR21XT7BGR60j+AMDnHRP4AMkvicj3Yvek/Z/kiQCO1edFGeqPRORq1X6rCOGr2zhGRXWhbhUxvQf1PMGfhz2hdLOa5LeUyVhf5v6arfOfr66E0cqMP6zuFrjNfrIekn5G16wa0WjJMUYoPrZz4/sJQoLqEj3j2Vnnf2wkiDYF8AuSk/RMxpSARerqOtAxR6P//QDcgcaoKALYUdeQjoECwD1K6/N0HD70dheS40Xk+YSzrCmR28remy0iy1XZ7FOX3XTFhXfteOH8sv5tc+fSqrlxbgbgBpLvFpG5ThESt4bXKj76IoFs/SxDONwfpopNTxNm/i2Sc0Xktx0KEYnO67LwV2R4x1caN6E+wv2baMwTiXE8HsBVJKco75RBLTpKcluS5yRc95rH9bXvaXMsI9VttTCHEiqx++rqgXBfZXBhHd1Fu8NIvpzmwnKm+MUJNzUuILlPSvubqOnMyLWzSMuolFwoYQ/Ju9z8KtrXPtE4TEN+m7rRKg4X83RO5Rbhuhe5fmwuB6U8f0j0vLnoTm2B30+oq6KqNNKn7fy9c9XY2p6SUkrnAlWSmvVznLrt4n5OM/px/Xy7iYvjmgjP9vzx0XO2hsfp76dGvxs+D2uybr+P2rH3TnU4mUjypeg5+36E5Enq2tpIPzuQ/EeSj0ZjsHeeIDnG3Idubmc4l2fsTptO8v0kx5Ecra7SPXQPrlY811w/NaXfNeG/bbiwpg2gC8vPy8ZwsZZY2Unx+F6S5yeMkY6WTklzlfc0O1xSE2+KSuJSBgnZqxEbOyLEjh+spiETpGc3Gv9yAGNIHpwQ7eGl70bq4thbNcLtEw4E83Bf/WqQ3VfWzySSS3QN27V8xuh6tTqknqyHpRWnnbwI4FAReVrdHLXIlVHSSJUTNHLoGGeJjAfwNRH5km40aj9TAczTcdV0bJerEOmz8EIl4svVjWbujBUAPqraa8mFRTZEYaF5tN1wbb+c4Ho5J8J5GcCpInJ+VOKcXiMUkctJrlYLpeZcR2eTvFHdSc2sfyuG9zsROcXcr5F7Q/Rw9CqSbwHwn2gsvnciyfPRWPzwdgDf8O45/d7Th9+6cRyYsPf61H0FtcD8Ya/tqwMA/EbXy4cDx5nqZgXNUJxVSf6XWhWVyCK4AcDHRCQuy7EcwBMkrwLwK4RL6uydiu7500Xk3xSHFQ2E+Jxz5VRcAMYPROQLUR8rEMqIzCf5AICfO/e3reu+AHYWkQXaT6v9aL+fjRAFR7ePpwI4zbn7fdTpVDRGYVUBLI0su5hn2tr8vYj8Mvr9cQC3k7wZwDWOJsXR0skkL8zMY5wk3Zjkz3KyGPKEWhdjqeU8hleTDiEH2ALJG6qxBeL6vTKyDKgVbdFCMy4rHY0juVTxZVryKxoqiUgrPDbBypqmv43Q77MTnjm+VTCB6+PiBAvkPU008MMSLKgZ7nA9zdIZpt+/Smjj+GhOpyRo8lWSe3n8NNmnZbWuF0Vr2U9yx2heYzRIgQla9E7xQT/JexM02AeioIpnowNZkvyta8v6PiDaN9beoy6wZbeoL6OXRxyuep01YXyq1wWGLHJzs/cXKy+zeR3ZZB8scgmDPVFyp7cY72ti7XzYDuYzWCBvSqGdZpZdqyCXnyfwCPv3fzrPQznyANh4z2nCYxroo+UhuiXSiMgyEZkK4D+cX6zqfH9Jn6o7jBqIG/n8wXcl41j8oZjkOA4glF94UTX2wc7/sEJrnXz60xQIPWfYDCFUF07bWgTgp0pITduw4pYi8oJq4eLWZVMAHzAt1Erfi8jVCOGzPW5+J5E8TkRW6cHqGWgMd71YRC4boOTNqVj7yoEf2CFsi/Wu6nPnROcKRD18nClnfPNF5D53focm+xRaruTO6MylByEc1VuUr6Exb0qclru3Ww/qWeEubuxG73PVohim/c6LDsTNohltQQP6tzhc2Nr7g+VvIISXlhIs2u+qD36k68cHbFB/e0XPWgWNJc23VIuZSrd9CKGql7rvywGcaUEeDufivC/Gy/4czcHWcYtOFESXCT5cBe6IlDPPHuf2LTsrOM1jswrAeTr3iohURaSmn6paZSUAF0dnQHD0sXszeVFqRpwmeUXk6wC+pG4Fce8lfSxyIU9m7RfpJWVqC52J22osA1lQbF1GX/Wo2d3JpzfD4du+ehjpXSe3isjrusnYen9QUL+d0TPRQxIYbhnA6QDudUKEAP5XwzynRXN/CMCpCYfS3Vh84u5yOdC5pcrqKphhuQOtFAx97m4Af3VMSADsp669vhTF5O7IPZQWFCEAHk7YKxMTDltvi55hdMBt/VkBxThScWZEI7MiZk8NpNg1cv3t38QNe6uzkg51bRvze1lELlOmt1JEKk0+KxXfl0eKq9HbmrZF5GYR+aSInOC+jxeRC501IyJCY7Lax2p1f70dydUrOuEx1n4VIbM9NdvePVN176XxTAHwZxH5qyo9tSZjqAH4C0I+myQIx4lpTAgpQqSm2t33Sb6oUqqc4zlCVjCtao5GOxyskRq7o/tM8k7PYl4H8BvD0yD3b1FAT0VaW5bzE6oQ+SDWTsrym3sPrF01+e42BKaVCHkQ9cxlu8hpd6+RWgkH9cNPVSFi52djNUqo7DbuKgBTtXRMntaf4WdrhBBcD4+IyJIs0SiumOFqTTx7k2NmWwDY3iyMJvDXzAMOfS1N+GlkgmC6M2Kw4pQF/9wBkUVke35uZEnMjpin7dPJKgQtBHTvBOGw2gmgCQgRXfFZqeXkSMZ1GxOdORmt7ukUlVJ0DlM1i8NZQ1ZpYLzSwfZqkf2NfnOQ+V83SvdfHe7TBM5KVZLGJ/w2qm0B4sxkczFcRvIldUlshO5zOjo5OP6lbswnVYhcixCmNphCxAj0jxoeOdjZmrZJzxaR6zrUtMuqbYxN0Xi2xdoF755qVa+nidX4UqTFTHBhm2u0PaWzxzTy4wpn/ZSdMCsD+LyIPDAAritxDG1Y5MJamHEjxm09lUA7WwNIEyCrOmQWSf373x9CCLnePlICdyO5iQY/eItBokPcRyMBMl+ZzqbRGA4CcL5ac29GyEXw7ZX1XcPpNirw4nvAtwDwtS7W0tqaSHKEukK91m1laXZCyHl5O0Ko93a6RlsmWOuDrTx3K0BWZ+DxaGNfZxcgrhMTIjeRfJ+6JcYNEuP20Ve3aLRGj5YROBTAzxASjgZLiDByX7VjAeQJG1kNpw5cOJu18J0CjSVK7NlXOxjnSqx9qc1o1BMSYzrrFZErlc58BJgxnmtEZNoAF63cJNLIgXq0S7vuylda4Hbgta+6RdRP8g9OgFiOxebqdpqtEVN7RsKyBOBeXypFFaclGpn0zoix7mMKgrY13CmchoM7nSW3WSRgPb76uuBppgCMUqV3FernbqMA/ANCWZ59mrh1rX+zOLpNUB1yUGqDCE2I3AXgXQhF2rq+9zujxg+EAzcruFbR71UicjSAi9xYBvIw28LtViPU4srjYqyO8aIMtJriG274OHO92uZGRKR5ZmJa7ruWQHelBMvIapWNRmMVWO9j30UP+GsDEfnmXBsxdErnlYztD5YVf1v0f1tTq5S7u2resTUwM3qvFLmx/PPbox42v38kPEvRONIUWVHh087HVwUwBWus9aG840AA9wD4oY7PQm/7UL+h0/ofpu32qmv1wQTlYoOFtjR2J0QeJfkutUQmD7D2n6jx+8xSETlJz2i+7jSmgWAupiHdpXkQpSFye1oSo3k94bcRbbjJLJ+oRzegh74mmqVph2erVujX0gTRrgDOFZHjte2BUGBWOlwY/Y3qsK1RCbhduS4UDlPEUD+T8srWASR/iMZyJP4mvDnRfrTvWZHLyN7bG6Gw4pQIlyW1yua6vldE+DFhtFT7lS4Vw5XQqEHN0r9FrWCrrCBOWBgsQ8iTuF8Fx30618tVyL5RXFnrjwBxQqSs5QoOAXA1QmTUQAgR0/hXmsbvD6z1/xam+M8kFwP4gWM2pQEYD1Av3b6u3FeDAS9EzKekbst23TgbqwYYu3VejwSOCY/DAHwmEh5PIPjRrVTFJ0heLyLX5FBSO2l9X0pY33Edap7jEwTIi4OuFdQVrqdVi56ExsPgvXU/TY7wIYqPWPM2XM1T19AINJ4Z7YfgXt7Dzd0UsLtF5BXnhlwUjcX6fVJEDs9lYTWqFCGaz4RHr+uvpHO5Wq2qBSLyfEI7Iwu7owMXVkSM5gNdDuBvVSoPhAvJiHW2iDyTpPHrAaydi5yrPs3qADH3shLejRuAGbsg4W+7tuE2sufejPohq9HGX+wuDxefT3VN/RiN2d2PIRzKznNt1hDCe8fpe3kpCj5y5ZVoHjspjWVdcxNqb3PtWB7Ck+toTS1i7U6HR5vfW0hui8aYf5vr/SKyzGf6O4H0DNYuMw6EfJC3OndYyeE3dqM9jXB3+1quMJJbxLkPTW4LLGdwqU5CiDirOeFhOPgegH1F5CwRmWHCw8rBaBKeFK6rHASIIyBzJx2PkDRluRnMeUNf26q4o3OvXYlQkfM1ZI+YycoQBOEw8fEh6r7yQvEerJ2AeXAb5z6W1fyOiKECodKqZyCGy/MRol+q7rdTNCHxn9zfLUHsgihhrVstnbquSxEilry7ZjsAO6eVmndaqmUHT3AM2eBxAM+0U4Z/ACzo29z+N/fQcIR7TrZ2v9nzs5vwCxNIcyNLFWoxHh31a0z+DntelYjX1VVFt8ZVhGAGKwAJy32IP6ZwkByl1wTEH4sCm4TG0HQTbM8D+Lq7N2NNTTV3fljRuW7RgRVeCJBmQsS5H76IEHJXxtr5A924r/oA3JSFcTkhcgtCXZznUK+Lk9fmuz4P3K2v4DTLR5SJ+vlPIbmLbtZyFoYM4BORBg6ECr6egVRIfgQh+7vimM15Wr13uIjMBXCWY0IVAEeR/JS5VXPeEzehseZQGaHmVpYKC8ZYj0W9bpfRzy3K9NaFAKk5Ab4sEhJQ1+HGCbiYFe2BGGYmWJ4TAJwUua9ErbsHEiygK5FcYfbLrr5Zsz3Xq7zoO0q3DyBkjNv35/W5zZEc3vyqRqj5bG1GCoGQ3BRrX4pVCJButTZlBD0ichaAEx2zqOVA7HeLyF+yavxOiNwD4N1KUHkctlq47A0bgPvKXDWXoPEAuwfAd+y+jqQNrRr6cF2H4xAOZauOkcwFcK97t0ZyolofNYfrvwD4qgqGfv3+FoIvvsetwbnqeqnl5MqyMVyB+pW7xmg/Q3JrZTaJ9bCU9vo12/wMp+UaHi9ZV/TjLKyXUc9290x8BzRmcZcQzqr+1GTMPnM+DsEdhnpJeu/6man5GGV3I6DovnrU8Q3bbweRPFMtgZpzZ9mnrOHFuwM4WcdtVTNsPBfr98sJblYC2I7kbkrzvZG7rAd6TwmAL6N+DWxhgeRp+jvG/ROEvIyVXbqQTAO4rt2xurE8rkJkdpdCxAhmPoCHrcroEKYL29Q/RvBxl51b4RiSXxWRfrNWvC9aaWE1yX1RvwfGa6DfdBdGmU/9ItTv3jYt9GQRWeEtXc0rODFqc2MAP25xCVW7FlhZRBYiHLgaDRMhX+Eqkhvr/OmK0pUd7Q1TjXobNCZA/kJE5rtrntflnr89wapggnB4uMn9Hv75xxDOMeIzgiSL5VZvqdi6ichqhAvLBI219KoAvknyPL1rJA5br2o+2M2o32EOhLPKEsK1yiYA50Q48JUZLiO5g4j0WbuuryrJzwH4KhorHBcCJGcNxxj3dIQbCF9CZ4lucK6njg6sXbTYYh3LjV0IESPK6RldGG94N5Zu6tcQ7uOWiGn/B8n/U62NbrPVSG5J8vPKoCxhsaJa4aUicnPEbE9BKBHhXVfTRORWpSUrd1J1eUjfi1xZ7yP5OVfHqmsrRK2Zf0U4s7By6jUEn/wskn9HcqSrl1TVg9b3I4TKHuHe6UGIavuCBQysw+W1vu9w+I7dT/65uxKe8xZNWUuA3JOwT317tvd+Hz/n7p2/ESGKste5/UzYfhbAQySv0erU3yD5Q5JzAPwWjZeHGb09D+B0E/Iicj9C+XhfDNTWYxKAeVqx+USSf0vyGJJf0z7ORXpRVmIDhJ4BYD4mRGaSfLeaptujvTBf8znfJyKPdKrxu2ixFSSPRLjZ7VOoZzdnNUPtXOf6DYVY3Kb+NckvAvi+Y9gEcDyAj2mtp6dRv5Fwd9TDdu0Wv2Gqef6TuZmUTnZSYVB1bs+FAM6IrmT1llEZwJkItbx2Qb3681kkb1F66SrAwYqJauTRkSoMrfJCDeFui+sBPEVyAcJ5wkYIZTB2dHO3PfYagKNVky+1uiZ0gMHwch/CGeFEJIe8296Y2Qpd7rljU/osqTv5iSb72Sy/L+gtmJ92eDQldCzC/TJJzJvu+V6EqglHWfIx6sU9P6tC0UJ5eyJr9gT9xGBhv8t1rWPYIMN7SwPEfEyIPIyQtT6vTe0/PrAudzGWmmNaJwD4L7QXLWaa98MIl8pIjnkH7Wz6SvTpVojF7VVThMg5uqleRT25zBIB91aX5bG61mMRsnnpnv0JgA+KyKpofS/SjVdxQuRktXzWcpm4ENJVAP7RuYcqKqQuWkNAyeHGmfHoXFlGw3NQr+5sWctvQShNfyyAw1V49DtlqQfhzOZgEZmt7dUyjKmWA33UUoRjWcuxz0T9WoAkvPgLpGot9updbk/FbVn7M3T+idaMWX4iciJCBfAVjsEbE18dffoc7Vq5kfsV53cZzrVfEZGH1DpchPpZiV1T0R+1a/+GPvvfAH6kc1kVzXFcAl4qTT7trmWW6hHVDt/L0kZtUAVI5EJ6FiEi6tY2hIiZrdM7cV81ccnYxvkywuFm1mgx2xQ32j0X60DQj1bcjdBPUnZ3WyhBCIO1dnqwdrJfLEQuVTN/GsJh5LAUXAxXvN0O4AgROVEPTu18g5pt/m6lweHa3sUi8hvvumoynh4RmanuDis1UQbwDpLnoHm11DEOj8NQL4nfygp7FKHe02kIkWnllPfsfu3H1Wc+RUTmpSQ8jkxY23az3ke12YYx5Nvdez0Jn8UAnmzhAbC/P6jMtjehHWv/tlaWn9JGSUS+r/T2vzqOsrYdly6xdSwh5KOcAWB/EbkvxrlTCmYg5IP8COGeeSt70hu1a/9+EsBpInK6uiL9nOz74EigevrqcXgZ3YLvjoraHZa2Px1s0mRcm7RBR2OjPlvS0oBHEjiTvRfhApePtHAh2SHVfCUg5lWuWxmYhY1+EiE6o4T0rHXTJvcVkXtzznzOirspqCdAmeD/nZaUadtdoze8fdwx+hKAJSLys5R31syb5FYI+R2T1T25GeoFL59RDfAPqr1bGCRdOGavWjSeBogQ+fSatzZS1hFK4MejMXKoBuASPXCP8fhedXv5w/rrROTZtDLtHsd6xrK/noXsqprncNVYF6ubZjZC8uuq+P2EMe2mzMev7SwR+VOrtXVtvF2tJN/GTGWiSX1bmZmt1HqK614ZTTypBVSz3P8Ckh9CyLz3+8nXMbtCRF7N0l5Eb2MRSsxPVitvC2XIqxTnf1acz7F1T8NdtJ7jVJHZT2l5Ux3rUoTggJkA7lA3eAkhsuwwN0eb3ytaBNRwuw2AI6P5m7XzUxFZ7vHg1nIvhMTZxPaT9oL2d6i6UGsRT3tcr8DIgvOpqFfo9pWYM9HjgDJCd6Xk/0TXfNbcp+KuVDzaCGkAxmPXUx5Bcrm7RL4WXYm5Sn+7xjHCDRayZPzGxD0Q67eO5t72XHxCWgEDT2/t4Lzd9RwqdJy7p2kwN6D6IGskvwHg2ymPf0tEzhxIiWd1eEjuj3ChfLNbt+aoz3RpntZQuxspwUKqdjOWhGglZrWsXFUAf8sg0JgIVmuhPSdZoG3NySzKrPPIsc9SZDkxmjtRv5Wwk7WttUP3nbbRBH8d0UQKfrum2Yz0lhnnKThIaruh3RScNeAqDbdp1xA0WcuWa5GC+3b2dbM2autF2oKX+iQPJ3kHyWWq7S8jOUOjXgZF23eWyDYkLyT5nI6lj+SjJM+04mmFJllAAQUUsI4skFjSOf/mBAS/41IRWWTCY7AkXuQPHaOWSAXAQrviMqsPuIACCiiggEESIrFWv6585s36LXzYBRRQQAHrmQUSM28dB9e1lu/GgvVhPAUUUEABBRRQQAEFFFBAAQUUUEABBRRQQAEFFFBAx/D/eeySiCBZ7MwAAAAASUVORK5CYII=" alt="Hoxton Wealth" style="height:36px; width:auto; display:block;" />
+  </div>
+  <div class="header-subtitle">Investment Projection Tool</div>
+</header>
+
+<div class="app-layout">
+
+<!-- ═══════════════════════════════════════════════════════
+     LEFT PANEL — INPUTS
+═══════════════════════════════════════════════════════ -->
+<div class="left-panel">
+
+  <!-- Step 1: Client Details -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-step">1</div>
+      <div class="card-title">Client Details</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label for="clientName">Client Name</label>
+        <input type="text" id="clientName" placeholder="e.g. James & Sarah Thompson" />
+      </div>
+      <div class="form-group">
+        <label for="clientAge">Client Age</label>
+        <input type="number" id="clientAge" min="18" max="80" placeholder="e.g. 40" />
+      </div>
+      <div class="form-group">
+        <label for="horizonYears">Investment Horizon (Years)</label>
+        <input type="number" id="horizonYears" min="1" max="30" placeholder="e.g. 20" />
+      </div>
+      <div class="form-group">
+        <label for="initialInvestment">Initial Lump Sum</label>
+        <div class="input-prefix">
+          <span>$</span>
+          <input type="number" id="initialInvestment" min="0" placeholder="100,000" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="regularContrib">Regular Contribution</label>
+        <div class="input-prefix">
+          <span>$</span>
+          <input type="number" id="regularContrib" min="0" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-group full">
+        <label for="contribFrequency">Contribution Frequency</label>
+        <select id="contribFrequency">
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Asset Allocation -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-step">2</div>
+      <div class="card-title">Asset Allocation</div>
+      <div id="totalBadge" class="total-badge invalid" style="margin-left:auto">0%</div>
+    </div>
+
+    <div class="preset-buttons">
+      <button class="btn-preset" onclick="applyPreset('60/40')">60/40 Conservative</button>
+      <button class="btn-preset" onclick="applyPreset('80/20')">80/20 Balanced</button>
+      <button class="btn-preset" onclick="applyPreset('100eq')">100% Equity</button>
+      <button class="btn-preset" onclick="applyPreset('reset')">Reset</button>
+    </div>
+
+    <div id="allocationRows">
+      <!-- Populated by JS -->
+    </div>
+
+    <div id="allocWarning" class="allocation-warning">
+      ⚠ Allocation must total exactly 100%
+    </div>
+  </div>
+
+  <!-- Step 3: Projection Mode -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-step">3</div>
+      <div class="card-title">Projection Mode</div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab" id="tab-linear" onclick="switchMode('linear')">📈 Linear Projection</button>
+      <button class="mode-tab active" id="tab-historical" onclick="switchMode('historical')">📊 Historical Scenario</button>
+    </div>
+
+    <div id="panel-linear" class="mode-panel">
+      <div class="form-group">
+        <label for="estimatedReturn">Estimated Annual Return (%)</label>
+        <input type="number" id="estimatedReturn" min="-20" max="50" step="0.1" placeholder="e.g. 7.5" />
+      </div>
+    </div>
+
+    <div id="panel-historical" class="mode-panel active">
+      <div class="form-group">
+        <label for="histStartYear">Historical Start Year</label>
+        <select id="histStartYear">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="historical-years-info" id="histYearsInfo">
+        Select a start year to see the historical scenario
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-calculate" onclick="calculate()">Generate Projection</button>
+
+</div><!-- /left-panel -->
+
+<!-- ═══════════════════════════════════════════════════════
+     RIGHT PANEL — RESULTS
+═══════════════════════════════════════════════════════ -->
+<div class="right-panel" id="rightPanel">
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">📊</div>
+    <div class="empty-title">Ready to project</div>
+    <div class="empty-text">Fill in client details, build your allocation, choose a projection mode, then hit Generate.</div>
+  </div>
+
+  <div id="resultsContent" style="display:none; display:flex; flex-direction:column; gap:1.25rem;">
+
+    <!-- Client summary banner -->
+    <div class="card" style="background: var(--deep-green); border-color: var(--deep-green); color: white; padding: 1rem 1.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <div style="font-family:'Playfair Display',Georgia,serif; font-size:1.1rem; font-weight:600;" id="resultClientName">Client Name</div>
+          <div style="font-size:0.75rem; color:var(--mint); margin-top:2px;" id="resultSubtitle">—</div>
+        </div>
+        <div id="resultModeBadge" style="font-size:0.72rem; font-weight:600; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; color:var(--mint);"></div>
+      </div>
+    </div>
+
+    <!-- Summary numbers -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Invested</div>
+        <div class="summary-value" id="sumTotalInvested">—</div>
+        <div class="summary-sub" id="sumInvestedSub">—</div>
+      </div>
+      <div class="summary-card highlight">
+        <div class="summary-label">Projected Final Value</div>
+        <div class="summary-value" id="sumFinalValue">—</div>
+        <div class="summary-sub" id="sumFinalSub">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Growth</div>
+        <div class="summary-value" id="sumGrowth">—</div>
+        <div class="summary-sub" id="sumGrowthSub">—</div>
+      </div>
+    </div>
+
+    <!-- Print bar -->
+    <div class="print-bar">
+      <span class="print-hint">Opens a print-ready A4 landscape view → Save as PDF</span>
+      <button class="btn-print" onclick="printReport()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print / Export PDF
+      </button>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-wrapper">
+        <div class="chart-title">Portfolio Growth Over Time</div>
+        <div class="chart-canvas-wrap" style="height:300px;">
+          <canvas id="growthChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-title">Asset Allocation</div>
+        <div class="chart-canvas-wrap" style="height:300px;">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario note (historical only) -->
+    <div class="scenario-note" id="scenarioNote" style="display:none">
+      <span class="note-icon">ℹ️</span>
+      <span id="scenarioNoteText"></span>
+    </div>
+
+    <!-- Year-by-year data table -->
+    <div class="card" style="padding:1rem 1.5rem;">
+      <div class="table-toggle" onclick="toggleTable()">
+        <span class="toggle-icon" id="toggleIcon">▶</span>
+        <span>Year-by-Year Breakdown</span>
+      </div>
+      <div class="data-table-wrap" id="dataTableWrap" style="display:none; margin-top:0.75rem;">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Age</th>
+              <th>Annual Return</th>
+              <th>Contributions</th>
+              <th>Growth</th>
+              <th>Portfolio Value</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /resultsContent -->
+
+</div><!-- /right-panel -->
+</div><!-- /app-layout -->
+
+<!-- ═══════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong style="color:var(--mint)">Important Disclaimer:</strong> This tool is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning only. All figures are shown in USD and do not account for taxes, fees, inflation, or currency fluctuations unless otherwise stated. Hoxton Wealth and its advisers are not liable for investment decisions made based on this tool. Always seek independent regulated financial advice before making investment decisions.
+    </div>
+    <div class="footer-credit">Created by William Gray · Hoxton Wealth · Investment Projection Tool v1.0</div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+// ── HISTORICAL DATA ────────────────────────────────────────────
+// Annual total returns (%) for each asset class, 1996–2025.
+// Sources: Bloomberg, MSCI, S&P Dow Jones, ICE BofA, FTSE Russell,
+// World Gold Council, STOXX, FRED. Data is approximate and for
+// illustrative purposes only.
+// NOTE: XLK was launched on 22 Dec 1998; returns shown for 1996–1998
+// are taken from the underlying S&P 500 Information Technology sector
+// index, which XLK tracks. They are labelled accordingly in the UI.
+// All return figures are denominated in the index's native currency
+// (S&P/MSCI/XLK/bonds/gold/cash in USD; FTSE 100 in GBP; EURO STOXX in EUR).
+
+const YEARS = [1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,
+               2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,
+               2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+
+const ASSET_RETURNS = {
+  sp500:     [22.96, 33.36, 28.58, 21.04, -9.10,-11.89,-22.10, 28.68, 10.88,  4.91,
+              15.79,  5.49,-37.00, 26.46, 15.06,  2.11, 16.00, 32.39, 13.69,  1.38,
+              11.96, 21.83, -4.38, 31.49, 18.40, 28.71,-18.11, 26.29, 25.02, 17.88],
+  ftse100:   [16.13, 28.74, 17.46, 20.59, -7.96,-13.16,-22.16, 17.89, 11.27, 20.78,
+              14.43,  7.36,-28.33, 27.33, 12.62, -2.18,  9.97, 18.66,  0.74, -1.32,
+              19.07, 11.95, -8.78, 17.32,-11.55, 18.44,  4.70,  7.93,  9.78, 19.06],
+  msciWorld: [14.00, 16.20, 24.30, 25.30,-13.20,-16.80,-19.90, 33.10, 14.70,  9.50,
+              20.10,  9.00,-40.70, 30.00, 11.80, -5.50, 15.80, 27.40,  4.90, -0.90,
+               8.20, 22.40, -8.70, 28.40, 16.00, 21.80,-18.10, 24.00, 19.00, 21.09],
+  msciEM:    [ 6.00,-11.60,-25.30, 66.40,-30.60, -2.40, -6.20, 56.30, 26.00, 34.50,
+              32.60, 39.80,-53.20, 79.00, 19.20,-18.40, 18.60, -2.60, -1.80,-14.90,
+              11.60, 37.80,-14.60, 18.90, 18.70, -2.50,-20.10, 10.00,  8.10, 34.36],
+  bonds:     [ 3.60,  9.60,  8.70, -0.80, 11.60,  8.40, 10.30,  4.10,  4.30,  2.40,
+               4.30,  7.00,  5.20,  5.90,  6.50,  7.80,  4.20, -2.00,  6.00,  0.60,
+               2.60,  3.50,  0.00,  8.70,  7.50, -1.50,-13.00,  5.50,  1.30,  7.30],
+  gold:      [-4.65,-21.40,  0.57,  0.90, -6.06,  1.41, 23.96, 19.60,  5.20, 17.77,
+              23.20, 31.40,  5.80, 24.00, 29.80, 10.20,  7.10,-28.30, -1.50,-10.40,
+               8.60, 13.10, -1.90, 18.90, 24.60, -3.50, -0.30, 13.10, 27.20, 65.00],
+  cash:      [ 5.14,  5.18,  4.85,  4.73,  5.92,  3.45,  1.64,  0.94,  1.43,  3.15,
+               4.97,  4.74,  1.56,  0.16,  0.13,  0.06,  0.08,  0.06,  0.04,  0.19,
+               0.47,  0.94,  1.94,  2.24,  0.38,  0.04,  1.66,  5.02,  5.03,  4.30],
+  xlk:       [35.00, 29.00, 78.00, 78.10,-41.60,-33.20,-37.70, 47.30,  3.10,  3.30,
+              11.10, 16.50,-43.50, 61.70, 10.20,  2.40, 14.70, 28.40, 20.10,  4.30,
+              13.90, 38.80, -1.60, 50.30, 43.90, 34.50,-28.20, 57.80, 22.00, 24.61],
+  euroStoxx: [26.50, 38.00, 37.10, 50.40, -2.70,-19.70,-34.60, 18.20, 10.00, 23.00,
+              17.30,  9.30,-43.70, 25.30, -2.80,-14.40, 17.30, 21.49,  4.95,  6.94,
+               3.69,  9.15,-12.04, 28.20, -2.78, 24.10, -8.59, 22.88, 11.39, 37.47]
+};
+
+// ── ASSET CONFIG ───────────────────────────────────────────────
+const ASSETS = [
+  { key: 'sp500',     label: 'S&P 500',               ticker: 'US Large Cap',        color: '#033839' },
+  { key: 'ftse100',   label: 'FTSE 100',               ticker: 'UK Large Cap',        color: '#1AB0C4' },
+  { key: 'msciWorld', label: 'MSCI World Index',       ticker: 'Global Equity',       color: '#FFA766' },
+  { key: 'msciEM',    label: 'MSCI Emerging Markets',  ticker: 'EM Equity',           color: '#AF9BE0' },
+  { key: 'bonds',     label: 'Bloomberg Aggregate Bond', ticker: 'Blended Bond',      color: '#196695' },
+  { key: 'gold',      label: 'Gold',                   ticker: 'Commodity',           color: '#FFD700' },
+  { key: 'cash',      label: 'Cash (USD)',              ticker: 'T-Bills',             color: '#ADC2C2' },
+  { key: 'xlk',       label: 'State Street Technology ETF', ticker: 'XLK · pre-1999 = sector proxy', color: '#F5B8A0' },
+  { key: 'euroStoxx', label: 'EURO STOXX 50',          ticker: 'European Equity',     color: '#527C7E' },
+];
+
+// ── ALLOCATION STATE ───────────────────────────────────────────
+let allocations = { sp500:0, ftse100:0, msciWorld:0, msciEM:0, bonds:0, gold:0, cash:0, xlk:0, euroStoxx:0 };
+
+// ── BUILD ALLOCATION ROWS ──────────────────────────────────────
+function buildAllocationRows() {
+  const container = document.getElementById('allocationRows');
+  container.innerHTML = '';
+  ASSETS.forEach(asset => {
+    const row = document.createElement('div');
+    row.className = 'asset-row';
+    row.innerHTML = `
+      <div class="asset-name">
+        <div class="asset-dot" style="background:${asset.color}"></div>
+        <div>
+          <div>${asset.label}</div>
+          <div class="asset-ticker">${asset.ticker}</div>
+        </div>
+      </div>
+      <input type="range" id="range_${asset.key}" min="0" max="100" step="1" value="0"
+             oninput="syncAlloc('${asset.key}','range')" />
+      <input type="number" class="asset-pct-input" id="pct_${asset.key}" min="0" max="100" step="1" value="0"
+             oninput="syncAlloc('${asset.key}','pct')" />
+    `;
+    container.appendChild(row);
+  });
+}
+
+function syncAlloc(key, source) {
+  const rangeEl = document.getElementById(`range_${key}`);
+  const pctEl   = document.getElementById(`pct_${key}`);
+  if (source === 'range') {
+    pctEl.value = rangeEl.value;
+  } else {
+    let v = Math.min(100, Math.max(0, parseInt(pctEl.value) || 0));
+    pctEl.value = v;
+    rangeEl.value = v;
+  }
+  allocations[key] = parseInt(rangeEl.value);
+  updateTotalBadge();
+}
+
+function updateTotalBadge() {
+  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById('totalBadge');
+  const warn  = document.getElementById('allocWarning');
+  badge.textContent = total + '%';
+  badge.className = 'total-badge ' + (total === 100 ? 'valid' : 'invalid');
+  warn.classList.toggle('show', total !== 100 && total > 0);
+  return total;
+}
+
+function setAlloc(key, value) {
+  const v = Math.max(0, Math.min(100, value));
+  allocations[key] = v;
+  document.getElementById(`range_${key}`).value = v;
+  document.getElementById(`pct_${key}`).value   = v;
+}
+
+// ── PRESETS ────────────────────────────────────────────────────
+const PRESETS = {
+  '60/40': { sp500:25, ftse100:10, msciWorld:15, msciEM:5,  bonds:40, gold:5,  cash:0, xlk:0, euroStoxx:0 },
+  '80/20': { sp500:30, ftse100:12, msciWorld:20, msciEM:8,  bonds:20, gold:5,  cash:0, xlk:5, euroStoxx:0 },
+  '100eq': { sp500:35, ftse100:10, msciWorld:25, msciEM:15, bonds:0,  gold:0,  cash:0, xlk:10,euroStoxx:5 },
+  'reset': { sp500:0,  ftse100:0,  msciWorld:0,  msciEM:0,  bonds:0,  gold:0,  cash:0, xlk:0, euroStoxx:0 },
+};
+
+function applyPreset(name) {
+  document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+  if (name !== 'reset') event.target.classList.add('active');
+  const preset = PRESETS[name];
+  ASSETS.forEach(a => setAlloc(a.key, preset[a.key]));
+  updateTotalBadge();
+}
+
+// ── MODE SWITCH ────────────────────────────────────────────────
+let currentMode = 'historical';
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-linear').classList.toggle('active', mode === 'linear');
+  document.getElementById('tab-historical').classList.toggle('active', mode === 'historical');
+  document.getElementById('panel-linear').classList.toggle('active', mode === 'linear');
+  document.getElementById('panel-historical').classList.toggle('active', mode === 'historical');
+}
+
+// ── POPULATE HISTORICAL YEAR DROPDOWN ─────────────────────────
+function populateYearDropdown() {
+  const sel = document.getElementById('histStartYear');
+  sel.innerHTML = '';
+  YEARS.forEach(y => {
+    // All full calendar years through the most recent year in the dataset
+    // are eligible as start years.
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    sel.appendChild(opt);
+  });
+  sel.value = 1996;
+  updateHistYearsInfo();
+  sel.addEventListener('change', updateHistYearsInfo);
+}
+
+function updateHistYearsInfo() {
+  const startYear = parseInt(document.getElementById('histStartYear').value);
+  const horizon   = parseInt(document.getElementById('horizonYears').value) || 0;
+  const endYear   = startYear + horizon - 1;
+  const maxEnd    = 2025;
+  const info      = document.getElementById('histYearsInfo');
+  if (!horizon) {
+    info.textContent = 'Enter investment horizon above to see available range.';
+    return;
+  }
+  if (endYear > maxEnd) {
+    info.innerHTML = `⚠️ <strong>Note:</strong> A ${horizon}-year window from ${startYear} extends to ${endYear}. Data available up to 2025; years beyond will use the most recent available return.`;
+    info.style.color = 'var(--warning)';
+  } else {
+    info.innerHTML = `📅 Scenario: <strong>${startYear}–${endYear}</strong> (${horizon} years of historical data)`;
+    info.style.color = 'var(--text-light)';
+  }
+}
+
+// ── CALCULATION ENGINE ─────────────────────────────────────────
+let growthChartInstance = null;
+let pieChartInstance    = null;
+
+function fmt(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function fmtFull(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function calculate() {
+  // Validate allocation
+  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
+  if (total !== 100) {
+    document.getElementById('allocWarning').classList.add('show');
+    alert('Please ensure your asset allocation totals exactly 100% before generating a projection.');
+    return;
+  }
+
+  const clientName     = document.getElementById('clientName').value.trim() || 'Client';
+  const clientAge      = parseInt(document.getElementById('clientAge').value) || 0;
+  const horizon        = parseInt(document.getElementById('horizonYears').value);
+  const initialInvest  = parseFloat(document.getElementById('initialInvestment').value) || 0;
+  const regularContrib = parseFloat(document.getElementById('regularContrib').value) || 0;
+  const frequency      = document.getElementById('contribFrequency').value;
+
+  if (!horizon || horizon < 1 || horizon > 30) {
+    alert('Please enter an investment horizon between 1 and 30 years.');
+    return;
+  }
+  if (initialInvest <= 0 && regularContrib <= 0) {
+    alert('Please enter an initial investment and/or regular contributions.');
+    return;
+  }
+
+  const annualContrib = frequency === 'monthly' ? regularContrib * 12 : regularContrib;
+
+  // Build annual returns array
+  let annualReturns = [];
+  let modeLabel = '';
+
+  if (currentMode === 'linear') {
+    const r = parseFloat(document.getElementById('estimatedReturn').value);
+    if (isNaN(r)) { alert('Please enter an estimated annual return.'); return; }
+    for (let i = 0; i < horizon; i++) annualReturns.push(r);
+    modeLabel = `Linear @ ${r}% p.a.`;
+  } else {
+    const startYear = parseInt(document.getElementById('histStartYear').value);
+    for (let i = 0; i < horizon; i++) {
+      const yr = startYear + i;
+      const yIdx = YEARS.indexOf(Math.min(yr, 2025));
+      const idx  = yIdx >= 0 ? yIdx : YEARS.length - 1;
+      // Weighted blend
+      let blended = 0;
+      ASSETS.forEach(a => {
+        blended += (allocations[a.key] / 100) * ASSET_RETURNS[a.key][idx];
+      });
+      annualReturns.push(parseFloat(blended.toFixed(2)));
+    }
+    modeLabel = `Historical scenario: ${startYear}–${startYear + horizon - 1}`;
+  }
+
+  // Project portfolio values year-by-year
+  const portfolioValues = [];
+  const contributionsArr = [];
+  const ageArr = [];
+  let value = initialInvest;
+  let totalContributed = initialInvest;
+
+  for (let i = 0; i < horizon; i++) {
+    const r = annualReturns[i] / 100;
+    // Contributions at start of year (before growth)
+    if (i > 0 || annualContrib > 0) {
+      value += annualContrib;
+      totalContributed += annualContrib;
+    }
+    const valueBeforeGrowth = value;
+    value = value * (1 + r);
+    portfolioValues.push(Math.round(value));
+    contributionsArr.push(Math.round(totalContributed));
+    ageArr.push(clientAge ? clientAge + i + 1 : null);
+  }
+
+  const finalValue  = portfolioValues[portfolioValues.length - 1];
+  const totalGrowth = finalValue - totalContributed;
+  const growthPct   = totalContributed > 0 ? ((finalValue / totalContributed - 1) * 100).toFixed(1) : 0;
+
+  // ── UPDATE SUMMARY ──
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'flex';
+
+  document.getElementById('resultClientName').textContent = clientName;
+  document.getElementById('resultSubtitle').textContent =
+    (clientAge ? `Age ${clientAge} · ` : '') + `${horizon}-year horizon`;
+  document.getElementById('resultModeBadge').textContent = modeLabel;
+
+  document.getElementById('sumTotalInvested').textContent = fmt(totalContributed);
+  document.getElementById('sumInvestedSub').textContent =
+    `$${Math.round(initialInvest).toLocaleString()} lump sum` +
+    (annualContrib > 0 ? ` + ${fmt(annualContrib)}/yr` : '');
+
+  document.getElementById('sumFinalValue').textContent = fmt(finalValue);
+  document.getElementById('sumFinalSub').textContent =
+    clientAge ? `When client is age ${clientAge + horizon}` : `After ${horizon} years`;
+
+  document.getElementById('sumGrowth').textContent = fmt(totalGrowth);
+  document.getElementById('sumGrowthSub').textContent = `+${growthPct}% total return`;
+
+  // ── SCENARIO NOTE ──
+  const noteEl = document.getElementById('scenarioNote');
+  if (currentMode === 'historical') {
+    const startYear = parseInt(document.getElementById('histStartYear').value);
+    const activeCount = ASSETS.filter(a => allocations[a.key] > 0).length;
+    const endYear = startYear + horizon - 1;
+    const overrun = endYear > 2025;
+    const usesXlkProxy = allocations.xlk > 0 && startYear < 1999;
+
+    let note =
+      `<strong>Historical Scenario ${startYear}–${endYear}:</strong> ` +
+      `This projection applies actual blended portfolio returns from that period to your current inputs. ` +
+      `It is for illustrative purposes only and does not predict future performance. ` +
+      `Returns are weighted across your ${activeCount} selected asset class${activeCount === 1 ? '' : 'es'}. ` +
+      `Underlying index returns are reported in each asset's native currency ` +
+      `(USD for S&amp;P 500 / MSCI / XLK / bonds / gold / cash, GBP for FTSE 100, EUR for EURO STOXX 50) ` +
+      `and are not adjusted for currency translation.`;
+    if (usesXlkProxy) {
+      note += ` <em>Note: XLK launched in Dec 1998; returns shown for years before 1999 are taken from the underlying S&amp;P 500 Information Technology sector index as a proxy.</em>`;
+    }
+    if (overrun) {
+      note += ` <em>Note: data extends to 2025; years beyond ${2025} use the 2025 return as a stand-in.</em>`;
+    }
+    document.getElementById('scenarioNoteText').innerHTML = note;
+    noteEl.style.display = 'flex';
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  // ── GROWTH CHART ──
+  const labels = Array.from({length: horizon}, (_, i) => {
+    const yr = new Date().getFullYear() + i + 1;
+    return ageArr[i] ? `Year ${i+1} (Age ${ageArr[i]})` : `Year ${i+1}`;
+  });
+
+  if (growthChartInstance) growthChartInstance.destroy();
+  growthChartInstance = new Chart(document.getElementById('growthChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Portfolio Value',
+          data: portfolioValues,
+          borderColor: '#033839',
+          backgroundColor: 'rgba(3,56,57,0.08)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2.5,
+          pointRadius: horizon <= 15 ? 4 : 2,
+          pointBackgroundColor: '#033839',
+        },
+        {
+          label: 'Total Contributions',
+          data: contributionsArr,
+          borderColor: '#1AB0C4',
+          backgroundColor: 'rgba(26,176,196,0.06)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          borderDash: [5, 3],
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            font: { family: 'Inter', size: 11 },
+            color: '#527C7E',
+            boxWidth: 14,
+            padding: 16,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmtFull(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { family: 'Inter', size: 10 }, color: '#709394', maxTicksLimit: 10 },
+          grid: { color: 'rgba(215,229,227,0.5)' }
+        },
+        y: {
+          ticks: {
+            font: { family: 'Inter', size: 10 }, color: '#709394',
+            callback: v => fmt(v)
+          },
+          grid: { color: 'rgba(215,229,227,0.5)' }
+        }
+      }
+    }
+  });
+
+  // ── PIE CHART ──
+  const activeAssets = ASSETS.filter(a => allocations[a.key] > 0);
+  if (pieChartInstance) pieChartInstance.destroy();
+  pieChartInstance = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: activeAssets.map(a => a.label),
+      datasets: [{
+        data: activeAssets.map(a => allocations[a.key]),
+        backgroundColor: activeAssets.map(a => a.color),
+        borderColor: 'white',
+        borderWidth: 2,
+        hoverBorderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { family: 'Inter', size: 10 },
+            color: '#527C7E',
+            boxWidth: 12,
+            padding: 10,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.raw}%`
+          }
+        }
+      }
+    }
+  });
+
+  // ── DATA TABLE ──
+  // Uses the same start-of-year contribution convention as the main
+  // calculation above: in Year 1 the lump sum AND first regular
+  // contribution are both invested at the start of the year, then grown.
+  const tbody = document.getElementById('dataTableBody');
+  tbody.innerHTML = '';
+  let runningValue = initialInvest;
+  let runningContrib = initialInvest;
+
+  for (let i = 0; i < horizon; i++) {
+    const r = annualReturns[i];
+    const yr = new Date().getFullYear() + i + 1;
+    // Add the regular contribution at the start of every year (matching main calc).
+    // In Year 1 this stacks on top of the initial lump sum.
+    runningValue   += annualContrib;
+    runningContrib += annualContrib;
+
+    const contribThisYear = (i === 0 ? initialInvest : 0) + annualContrib;
+    const growthAmt = runningValue * (r / 100);
+    runningValue = runningValue * (1 + r / 100);
+
+    const isPos = r >= 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>Year ${i + 1} (${yr})</td>
+      <td>${ageArr[i] ? ageArr[i] : '—'}</td>
+      <td><span class="return-badge ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${r.toFixed(1)}%</span></td>
+      <td>${contribThisYear > 0 ? fmtFull(contribThisYear) : '—'}</td>
+      <td style="color:${isPos ? '#067F42' : '#DB3532'}">${isPos ? '+' : ''}${fmtFull(growthAmt)}</td>
+      <td><strong>${fmtFull(runningValue)}</strong></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // Final totals row
+  const trFinal = document.createElement('tr');
+  trFinal.innerHTML = `
+    <td colspan="4">FINAL VALUE after ${horizon} years</td>
+    <td>+${fmtFull(finalValue - totalContributed)}</td>
+    <td>${fmtFull(finalValue)}</td>
+  `;
+  tbody.appendChild(trFinal);
+}
+
+// ── PRINT / PDF EXPORT ─────────────────────────────────────────
+function printReport() {
+  // Capture charts as hi-res images BEFORE opening new window
+  const growthCanvas = document.getElementById('growthChart');
+  const pieCanvas    = document.getElementById('pieChart');
+  if (!growthCanvas || !growthCanvas.getContext) {
+    alert('Please generate a projection first before printing.');
+    return;
+  }
+  const growthImg = growthCanvas.toDataURL('image/png', 1.0);
+  const pieImg    = pieCanvas.toDataURL('image/png', 1.0);
+
+  // Gather state
+  const clientName    = document.getElementById('resultClientName').textContent;
+  const subtitle      = document.getElementById('resultSubtitle').textContent;
+  const modeBadge     = document.getElementById('resultModeBadge').textContent;
+  const totalInvested = document.getElementById('sumTotalInvested').textContent;
+  const investedSub   = document.getElementById('sumInvestedSub').textContent;
+  const finalValue    = document.getElementById('sumFinalValue').textContent;
+  const finalSub      = document.getElementById('sumFinalSub').textContent;
+  const growth        = document.getElementById('sumGrowth').textContent;
+  const growthSub     = document.getElementById('sumGrowthSub').textContent;
+  const scenarioNote  = document.getElementById('scenarioNote').style.display !== 'none'
+                          ? document.getElementById('scenarioNoteText').innerHTML : '';
+  const dateGenerated = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+
+  // Build allocation rows for the summary page
+  const activeAssets = ASSETS.filter(a => allocations[a.key] > 0);
+  const allocRows = activeAssets.map(a =>
+    `<tr>
+      <td style="display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${a.color};flex-shrink:0;"></span>
+        ${a.label}
+      </td>
+      <td style="text-align:center;">${a.ticker}</td>
+      <td style="text-align:right;font-weight:700;color:#033839;">${allocations[a.key]}%</td>
+    </tr>`
+  ).join('');
+
+  // Build year-by-year table rows from the DOM (already rendered)
+  const tableRows = Array.from(document.querySelectorAll('#dataTableBody tr')).map(tr => {
+    const cells = Array.from(tr.cells).map(td => td.innerHTML);
+    const isLast = tr === tr.closest('tbody').lastElementChild;
+    const bg = isLast ? 'background:#e8f4f0;font-weight:700;color:#033839;' : '';
+    return `<tr style="${bg}">${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+  }).join('');
+
+  // SVG logo (inline — no external deps needed in print window)
+  const logoSVG = `<img src="data:image/png;base64,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" alt="Hoxton Wealth" style="height:30px;width:auto;display:block;" />`;
+
+  const pageHeader = `
+    <div class="page-header">
+      <div class="page-header-left">
+        ${logoSVG}
+        <div>
+          <div class="hdr-brand">Hoxton<span>Wealth</span></div>
+          <div class="hdr-tool">Investment Projection Tool</div>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <div class="hdr-date">Generated: ${dateGenerated}</div>
+        <div class="hdr-client">${clientName}</div>
+      </div>
+    </div>`;
+
+  const pageFooter = `
+    <div class="page-footer">
+      <span>For Illustration Purposes Only</span>
+      <span>Hoxton Wealth · Created by William Gray</span>
+    </div>`;
+
+  // ── ASSEMBLE FULL PRINT DOCUMENT ──────────────────────────────
+  const printHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Investment Projection — ${clientName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    @page { size: A4 landscape; margin: 12mm 16mm; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 10pt;
+      color: #022829;
+      background: white;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── PAGE SHELL ── */
+    .print-page {
+      width: 100%;
+      min-height: 176mm; /* A4 landscape inner height (210 - 2×12mm margin) */
+      display: flex;
+      flex-direction: column;
+      page-break-after: always;
+      break-after: page;
+    }
+    .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: #033839;
+      color: white;
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 6px 6px 0 0;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 10px; }
+    .hdr-brand { font-family: 'Playfair Display', Georgia, serif; font-size: 13pt; font-weight: 700; }
+    .hdr-brand span { font-weight: 400; }
+    .hdr-tool { font-size: 7pt; color: #B8F4EF; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+    .page-header-right { text-align: right; }
+    .hdr-date { font-size: 7.5pt; color: #B8F4EF; }
+    .hdr-client { font-size: 9pt; font-weight: 600; color: white; margin-top: 1px; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      background: #033839;
+      color: #B8F4EF;
+      padding: 5px 14px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7pt;
+      border-radius: 0 0 6px 6px;
+      margin-top: auto;
+      flex-shrink: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── PAGE BODY ── */
+    .page-body { flex: 1; padding: 0 2px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── PAGE 1: CLIENT OVERVIEW ── */
+    .client-hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #D7E5E3;
+      margin-bottom: 8px;
+    }
+    .client-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22pt;
+      font-weight: 700;
+      color: #033839;
+      line-height: 1.1;
+    }
+    .client-meta {
+      font-size: 9pt;
+      color: #527C7E;
+      margin-top: 3px;
+    }
+    .mode-chip {
+      background: #D7E5E3;
+      color: #033839;
+      font-size: 8pt;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid #B7CCCA;
+    }
+
+    .detail-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .detail-item {
+      background: #F5F7F7;
+      border: 1px solid #D7E5E3;
+      border-radius: 6px;
+      padding: 7px 10px;
+      text-align: center;
+    }
+    .detail-label {
+      font-size: 6.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #709394;
+      margin-bottom: 2px;
+    }
+    .detail-value {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #033839;
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .sum-card {
+      border: 1px solid #D7E5E3;
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    .sum-card.featured {
+      background: #033839;
+      border-color: #033839;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sum-label {
+      font-size: 6.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #709394;
+      margin-bottom: 3px;
+    }
+    .sum-card.featured .sum-label { color: #B8F4EF; }
+    .sum-value {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18pt;
+      font-weight: 700;
+      color: #033839;
+      line-height: 1.1;
+    }
+    .sum-card.featured .sum-value { color: white; }
+    .sum-sub { font-size: 7.5pt; color: #709394; margin-top: 2px; }
+    .sum-card.featured .sum-sub { color: #D7E5E3; }
+
+    /* ── ALLOCATION TABLE ON PAGE 1 ── */
+    .alloc-section-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 9.5pt;
+      font-weight: 600;
+      color: #033839;
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      border-bottom: 1.5px solid #D7E5E3;
+    }
+    .alloc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 20px;
+    }
+    .alloc-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    .alloc-table td { padding: 4px 6px; border-bottom: 1px solid #F5F7F7; vertical-align: middle; }
+    .alloc-table td:last-child { text-align: right; font-weight: 700; color: #033839; }
+    .alloc-table tr:last-child td { border-bottom: none; }
+
+    /* ── PAGE 2: CHARTS ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 12px;
+      flex: 1;
+    }
+    .chart-box {
+      border: 1px solid #D7E5E3;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-box-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 10pt;
+      font-weight: 600;
+      color: #033839;
+      margin-bottom: 6px;
+      padding-bottom: 5px;
+      border-bottom: 1.5px solid #D7E5E3;
+    }
+    .chart-box img { width: 100%; object-fit: contain; flex: 1; }
+
+    .scenario-box {
+      background: linear-gradient(135deg, #D7E5E3, #B8F4EF);
+      border: 1px solid #709394;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 8pt;
+      color: #022829;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── PAGE 3+: TABLE ── */
+    .table-page-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 12pt;
+      font-weight: 600;
+      color: #033839;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #D7E5E3;
+    }
+    .yr-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    .yr-table thead th {
+      background: #033839;
+      color: white;
+      padding: 7px 8px;
+      text-align: right;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .yr-table thead th:first-child { text-align: left; }
+    .yr-table tbody td { padding: 5px 8px; text-align: right; border-bottom: 1px solid #D7E5E3; }
+    .yr-table tbody td:first-child { text-align: left; font-weight: 600; color: #527C7E; }
+    .yr-table tbody tr:nth-child(even) { background: #F5F7F7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .yr-table .badge { font-size: 7.5pt; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+    .yr-table .badge.pos { background: #d4f5e5; color: #067F42; }
+    .yr-table .badge.neg { background: #fde8e8; color: #DB3532; }
+    .yr-table tfoot tr td {
+      font-weight: 700;
+      color: #033839;
+      background: #e8f4f0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      padding: 7px 8px;
+    }
+
+    .disclaimer-box {
+      border: 1px solid #D7E5E3;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 7pt;
+      color: #709394;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+    .disclaimer-box strong { color: #033839; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     PAGE 1 — CLIENT OVERVIEW & SUMMARY
+══════════════════════════════════════════ -->
+<div class="print-page">
+  ${pageHeader}
+  <div class="page-body">
+
+    <div class="client-hero">
+      <div>
+        <div class="client-name">${clientName}</div>
+        <div class="client-meta">${subtitle}</div>
+      </div>
+      <div class="mode-chip">${modeBadge}</div>
+    </div>
+
+    <div class="detail-strip">
+      <div class="detail-item">
+        <div class="detail-label">Initial Investment</div>
+        <div class="detail-value">${totalInvested}</div>
+        <div class="sum-sub">${investedSub}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Projected Final Value</div>
+        <div class="detail-value" style="color:#033839;font-size:13pt;">${finalValue}</div>
+        <div class="sum-sub">${finalSub}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Total Growth</div>
+        <div class="detail-value" style="color:#18B566;">${growth}</div>
+        <div class="sum-sub">${growthSub}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Horizon</div>
+        <div class="detail-value">${subtitle.split('·')[1] ? subtitle.split('·')[1].trim() : '—'}</div>
+        <div class="sum-sub">Investment period</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Projection Mode</div>
+        <div class="detail-value" style="font-size:9pt;">${modeBadge.split('@')[0].trim()}</div>
+        <div class="sum-sub">${modeBadge.includes('@') ? modeBadge.split('@')[1].trim() : ''}</div>
+      </div>
+    </div>
+
+    <div class="alloc-section-title">Portfolio Asset Allocation</div>
+    <table class="alloc-table">
+      <thead><tr style="background:#D7E5E3;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><th style="text-align:left;padding:5px 6px;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.05em;">Asset</th><th style="text-align:center;padding:5px 6px;font-size:7.5pt;">Type</th><th style="text-align:right;padding:5px 6px;font-size:7.5pt;">Allocation</th></tr></thead>
+      <tbody>${allocRows}</tbody>
+    </table>
+
+    ${scenarioNote ? `<div class="scenario-box" style="margin-top:6px;">ℹ️ ${scenarioNote}</div>` : ''}
+
+  </div>
+  ${pageFooter}
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — PORTFOLIO CHARTS
+══════════════════════════════════════════ -->
+<div class="print-page">
+  ${pageHeader}
+  <div class="page-body">
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="chart-box-title">Portfolio Growth Over Time</div>
+        <img src="${growthImg}" alt="Portfolio Growth Chart" />
+      </div>
+      <div class="chart-box">
+        <div class="chart-box-title">Asset Allocation</div>
+        <img src="${pieImg}" alt="Asset Allocation Chart" style="max-height:220px;"/>
+        <table class="alloc-table" style="margin-top:8px;font-size:8pt;">
+          <tbody>${allocRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    ${scenarioNote ? `<div class="scenario-box">ℹ️ ${scenarioNote}</div>` : ''}
+
+  </div>
+  ${pageFooter}
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — YEAR-BY-YEAR BREAKDOWN
+══════════════════════════════════════════ -->
+<div class="print-page">
+  ${pageHeader}
+  <div class="page-body">
+
+    <div class="table-page-title">Year-by-Year Breakdown — ${clientName}</div>
+
+    <table class="yr-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Year</th>
+          <th>Age</th>
+          <th>Annual Return</th>
+          <th>Contributions</th>
+          <th>Growth</th>
+          <th>Portfolio Value</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+
+    <div class="disclaimer-box">
+      <strong>Important Disclaimer:</strong> This report is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical return data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning purposes only. All figures are shown in USD and do not account for taxes, adviser fees, inflation, or currency fluctuations. Hoxton Wealth and its advisers accept no liability for investment decisions made based on this report. Always seek independent regulated financial advice before making investment decisions. <strong>Created by William Gray · Hoxton Wealth · ${dateGenerated}</strong>
+    </div>
+
+  </div>
+  ${pageFooter}
+</div>
+
+<script>
+  window.onload = function() {
+    // Brief delay to ensure fonts have loaded before print dialog opens
+    setTimeout(function() { window.print(); }, 800);
+  };
+<\/script>
+</body>
+</html>`;
+
+  const printWin = window.open('', '_blank', 'width=1200,height=850');
+  if (!printWin) {
+    alert('Pop-up blocked. Please allow pop-ups for this page and try again.');
+    return;
+  }
+  printWin.document.write(printHTML);
+  printWin.document.close();
+}
+
+// ── TABLE TOGGLE ───────────────────────────────────────────────
+function toggleTable() {
+  const wrap = document.getElementById('dataTableWrap');
+  const icon = document.getElementById('toggleIcon');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  icon.classList.toggle('open', !isOpen);
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+buildAllocationRows();
+populateYearDropdown();
+document.getElementById('horizonYears').addEventListener('input', updateHistYearsInfo);
+</script>
+</body>
+</html>
