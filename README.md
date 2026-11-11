@@ -1,4 +1,4 @@
-# Hoxton Wealth — Investment Projection Tool
+# Investment Projection Tool — William Gray
 
 A single-page tool for projecting portfolio returns under two modes:
 

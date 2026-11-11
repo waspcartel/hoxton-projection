@@ -1,823 +1,551 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Investment Projection Tool — Hoxton Wealth</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Projection Tool — William Gray</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Crect width=%2748%27 height=%2748%27 rx=%276%27 fill=%27%230A3161%27/%3E%3Ctext x=%2724%27 y=%2729%27 text-anchor=%27middle%27 font-family=%27Georgia,serif%27 font-weight=%27600%27 font-size=%2721%27 fill=%27white%27%3EWG%3C/text%3E%3Crect x=%2712%27 y=%2735%27 width=%2724%27 height=%273%27 fill=%27%23B31942%27/%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  /* ========== DESIGN TOKENS — American Expat Finance palette ========== */
+  :root {
+    --navy:       #0A3161;   /* buttons, links, table heads */
+    --navy-dark:  #072448;
+    --navy-tint:  #E7EDF5;
+    --red:        #B31942;   /* touches: top bar, rules, hover */
+    --ink:        #0B1A2E;   /* headings */
+    --text:       #1F2A3A;   /* body */
+    --muted:      #4A5568;   /* secondary text */
+    --subtle:     #718096;
+    --border:     #DDE3EC;
+    --field:      #C3CCD9;
+    --tint:       #F4F6FA;   /* tinted bands */
+    --white:      #FFFFFF;
+    --danger:     #B31942;
+    --warn:       #8A5A00;
+    --success:    #1E6B43;
+    --radius:     4px;
+    --shadow:     0 1px 2px rgba(11, 26, 46, .05), 0 6px 20px rgba(11, 26, 46, .05);
+    --font-head:  'Source Serif 4', Georgia, serif;
+    --font-body:  'Public Sans', -apple-system, 'Segoe UI', Arial, sans-serif;
+  }
 
-    :root {
-      --deep-green:   #033839;
-      --slate:        #527C7E;
-      --slate-shade2: #3C5958;
-      --slate-tint1:  #709394;
-      --grey-green:   #D7E5E3;
-      --grey-green-shade2: #B7CCCA;
-      --mint:         #B8F4EF;
-      --turquoise:    #1AB0C4;
-      --white:        #FFFFFF;
-      --off-white:    #F5F7F7;
-      --border:       #D7E5E3;
-      --text-dark:    #022829;
-      --text-mid:     #527C7E;
-      --text-light:   #709394;
-      --error:        #DB3532;
-      --warning:      #ED8128;
-      --success:      #18B566;
+  /* ========== BASE ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    font-family: var(--font-body);
+    background: var(--tint);
+    color: var(--text);
+    line-height: 1.55;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-head); font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+  a { color: var(--navy); }
+  :focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  [id] { scroll-margin-top: 88px; }
 
-      /* Chart palette from brand tertiary */
-      --chart-1: #033839;
-      --chart-2: #1AB0C4;
-      --chart-3: #FFA766;
-      --chart-4: #AF9BE0;
-      --chart-5: #196695;
-      --chart-6: #18B566;
-      --chart-7: #9FBCF3;
-      --chart-8: #F5B8A0;
-      --chart-9: #527C7E;
-    }
+  /* ========== HEADER — white bar under a red rule ========== */
+  .site-header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--white);
+    border-top: 4px solid var(--red);
+    border-bottom: 1px solid var(--border);
+  }
+  .site-header .bar {
+    max-width: 1600px; margin: 0 auto; padding: 10px 20px;
+    display: flex; align-items: center; gap: 20px; min-height: 64px;
+  }
+  .brand { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+  .brand svg { height: 42px; width: auto; display: block; }
+  .header-title { margin-left: auto; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  @media (max-width: 600px) { .header-title { display: none; } }
+  @media (max-width: 480px) { .brand svg { height: 34px; } .site-header .bar { padding: 8px 16px; } }
 
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--off-white);
-      color: var(--text-dark);
-      min-height: 100vh;
-      font-size: 14px;
-      line-height: 1.6;
-    }
+  /* ========== INTRO BAND — navy, red rule under the eyebrow ========== */
+  .hero { background: var(--navy); color: var(--white); }
+  .hero-inner { max-width: 1600px; margin: 0 auto; padding: 26px 20px 28px; }
+  .eyebrow {
+    display: inline-block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: .88; padding-bottom: .45rem; border-bottom: 3px solid var(--red); margin-bottom: 12px;
+  }
+  .hero h1 { color: var(--white); font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.15; }
+  .hero .lead { margin-top: 8px; max-width: 72ch; font-size: 1rem; opacity: .9; }
+  .hero-steps { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 18px; font-size: 0.88rem; }
+  .hero-steps li { display: flex; align-items: center; gap: 10px; }
+  .hero-steps .n {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--white); color: var(--navy);
+    font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
 
-    /* ── HEADER ──────────────────────────────────────────── */
-    header {
-      background: var(--deep-green);
-      color: white;
-      padding: 0 2rem;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 12px rgba(3,56,57,0.3);
-    }
-    .header-logo {
-      display: flex;
-      align-items: center;
-    }
-    .header-subtitle {
-      font-size: 0.75rem;
-      color: var(--mint);
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+  /* ========== LAYOUT — inputs on the left, results on the right ========== */
+  .app-layout {
+    max-width: 1600px; margin: 0 auto; padding: 24px 20px 48px;
+    display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 24px; align-items: start;
+  }
+  .left-panel { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 92px; max-height: calc(100vh - 108px); overflow-y: auto; padding-bottom: 4px; }
+  .right-panel { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  @media (max-width: 1000px) {
+    .app-layout { grid-template-columns: 1fr; }
+    .left-panel { position: static; max-height: none; overflow: visible; }
+  }
+  @media (max-width: 480px) { .app-layout { padding: 16px 16px 40px; } .hero-inner { padding: 22px 16px 24px; } }
 
-    /* ── LAYOUT ──────────────────────────────────────────── */
-    .app-layout {
-      display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 0;
-      min-height: calc(100vh - 64px);
-    }
+  /* ========== CARDS — white with a red top rule ========== */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--red);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    font-family: var(--font-head); font-size: 1.15rem; font-weight: 600; color: var(--ink);
+  }
+  .step {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--navy); color: var(--white);
+    font-family: var(--font-body); font-size: 0.82rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .step.done { background: var(--success); }
+  .card-body { padding: 18px; }
 
-    /* ── LEFT PANEL ──────────────────────────────────────── */
-    .left-panel {
-      background: white;
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
+  /* ========== FORM ========== */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .form-group.full { grid-column: 1 / -1; }
+  @media (max-width: 420px) { .form-grid { grid-template-columns: 1fr; } }
+  label, .label { font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  .opt { font-weight: 400; color: var(--subtle); }
+  input[type="text"], input[type="number"], select {
+    width: 100%; border: 1px solid var(--field); border-radius: var(--radius);
+    padding: 9px 11px; font-family: var(--font-body); font-size: 0.95rem; color: var(--text);
+    background: var(--white); outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus { border-color: var(--navy); box-shadow: 0 0 0 2px var(--navy); }
+  input:focus-visible, select:focus-visible { outline: none; }
+  input.invalid { border-color: var(--danger); }
+  .hint { font-size: 0.76rem; color: var(--subtle); }
+  .affix { position: relative; }
+  .affix span { position: absolute; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; font-size: 0.92rem; pointer-events: none; }
+  .affix.pre span { left: 11px; }
+  .affix.pre input { padding-left: 24px; }
+  .affix.post span { right: 11px; }
+  .affix.post input { padding-right: 30px; }
 
-    /* ── RIGHT PANEL ─────────────────────────────────────── */
-    .right-panel {
-      overflow-y: auto;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
+  .seg { display: flex; border: 1px solid var(--field); border-radius: var(--radius); overflow: hidden; }
+  .seg button {
+    flex: 1; padding: 8px 10px; border: none; background: var(--white); color: var(--muted);
+    font-family: var(--font-body); font-size: 0.86rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .seg button + button { border-left: 1px solid var(--field); }
+  .seg button:hover { background: var(--tint); color: var(--navy); }
+  .seg button[aria-pressed="true"] { background: var(--navy); color: var(--white); }
 
-    /* ── CARDS ───────────────────────────────────────────── */
-    .card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem 1.5rem;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid var(--grey-green);
-    }
-    .card-step {
-      background: var(--deep-green);
-      color: white;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .card-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--deep-green);
-    }
+  /* ========== ALLOCATION ========== */
+  .total-badge {
+    margin-left: auto; font-family: var(--font-body); font-size: 0.78rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px; border: 1px solid; white-space: nowrap;
+  }
+  .total-badge.valid   { background: #E6F2EB; color: var(--success); border-color: #B9DAC6; }
+  .total-badge.invalid { background: #FBE6EC; color: var(--danger); border-color: #EBB8C6; }
+  .total-badge.empty   { background: var(--tint); color: var(--muted); border-color: var(--border); }
 
-    /* ── FORM ELEMENTS ───────────────────────────────────── */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.85rem;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .form-group.full { grid-column: 1 / -1; }
-    label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--slate);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    input[type="text"],
-    input[type="number"],
-    select {
-      border: 1.5px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 0.88rem;
-      font-family: 'Inter', system-ui, sans-serif;
-      color: var(--text-dark);
-      background: white;
-      transition: border-color 0.15s;
-      width: 100%;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--turquoise);
-      box-shadow: 0 0 0 3px rgba(26,176,196,0.15);
-    }
-    .input-prefix {
-      position: relative;
-    }
-    .input-prefix span {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--slate);
-      font-weight: 600;
-      font-size: 0.88rem;
-      pointer-events: none;
-    }
-    .input-prefix input { padding-left: 22px; }
+  .preset-label { margin-bottom: 7px; }
+  .preset-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .btn-preset {
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 600; padding: 6px 11px;
+    border-radius: var(--radius); border: 1px solid var(--field); background: var(--white); color: var(--navy);
+    cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn-preset:hover { border-color: var(--navy); background: var(--navy-tint); }
+  .btn-preset.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .btn-preset.reset { color: var(--muted); margin-left: auto; }
 
-    /* ── ALLOCATION BUILDER ──────────────────────────────── */
-    .allocation-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-    }
-    .total-badge {
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      transition: all 0.2s;
-    }
-    .total-badge.valid   { background: #d4f5e5; color: #067F42; }
-    .total-badge.invalid { background: #fde8e8; color: var(--error); }
+  .alloc-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--tint); border: 1px solid var(--border); margin-bottom: 6px; }
+  .alloc-bar div { height: 100%; transition: width .2s; }
+  .alloc-bar-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; }
+  .alloc-bar-note.over { color: var(--danger); font-weight: 700; }
 
-    .preset-buttons {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-    .btn-preset {
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 5px;
-      border: 1.5px solid var(--slate);
-      background: white;
-      color: var(--slate);
-      cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.02em;
-    }
-    .btn-preset:hover {
-      background: var(--deep-green);
-      color: white;
-      border-color: var(--deep-green);
-    }
-    .btn-preset.active {
-      background: var(--deep-green);
-      color: white;
-      border-color: var(--deep-green);
-    }
+  .asset-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) 96px 64px; align-items: center; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid var(--tint);
+  }
+  .asset-row:last-child { border-bottom: none; }
+  .asset-row.zero .asset-label { color: var(--muted); }
+  .asset-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .asset-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .asset-label { font-size: 0.86rem; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  .asset-ticker { font-size: 0.72rem; color: var(--subtle); line-height: 1.3; }
+  input[type="range"] {
+    width: 100%; height: 4px; border-radius: 2px; appearance: none; -webkit-appearance: none;
+    background: var(--border); cursor: pointer; border: none; padding: 0; box-shadow: none;
+  }
+  input[type="range"]:focus { box-shadow: none; }
+  input[type="range"]:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--navy); border: 2px solid var(--white); box-shadow: 0 1px 4px rgba(11,26,46,.3); cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; background: var(--navy); border: 2px solid var(--white); cursor: pointer;
+  }
+  .asset-pct-input { text-align: right; padding: 6px 22px 6px 6px !important; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .asset-pct .affix span { right: 8px; font-size: 0.82rem; }
+  /* hide number spinners on the small % boxes */
+  .asset-pct-input::-webkit-inner-spin-button, .asset-pct-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .asset-pct-input { -moz-appearance: textfield; }
 
-    .asset-row {
-      display: grid;
-      grid-template-columns: 1fr 90px 52px;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--off-white);
-    }
-    .asset-row:last-child { border-bottom: none; }
-    .asset-name {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .asset-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .asset-ticker {
-      font-size: 0.67rem;
-      color: var(--text-light);
-      font-weight: 400;
-    }
-    input[type="range"] {
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      appearance: none;
-      background: var(--grey-green);
-      cursor: pointer;
-      outline: none;
-      border: none;
-      padding: 0;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--deep-green);
-      cursor: pointer;
-      border: 2px solid white;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    }
-    .asset-pct-input {
-      width: 52px;
-      text-align: center;
-      font-size: 0.82rem;
-      font-weight: 600;
-      padding: 4px 6px;
-      border: 1.5px solid var(--border);
-      border-radius: 5px;
-    }
+  .mode-desc { font-size: 0.82rem; color: var(--muted); margin: 10px 0 14px; }
+  .mode-panel { display: none; }
+  .mode-panel.active { display: block; }
+  .hist-info { font-size: 0.8rem; color: var(--muted); margin-top: 8px; padding: 8px 10px; background: var(--tint); border-left: 3px solid var(--navy); border-radius: var(--radius); }
+  .hist-info.warn { border-left-color: var(--warn); color: var(--warn); background: #FBF5E8; }
 
-    /* ── PROJECTION MODE ─────────────────────────────────── */
-    .mode-tabs {
-      display: flex;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-    }
-    .mode-tab {
-      flex: 1;
-      padding: 8px;
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      color: var(--slate);
-      border: none;
-      background: white;
-    }
-    .mode-tab.active {
-      background: var(--deep-green);
-      color: white;
-    }
+  /* ========== BUTTONS — navy, red on hover ========== */
+  .run-card { padding: 16px 18px; }
+  .btn-run, .btn-secondary {
+    border-radius: var(--radius); font-family: var(--font-body); font-weight: 700; cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn-run { width: 100%; background: var(--navy); color: var(--white); border: 2px solid var(--navy); padding: 12px 20px; font-size: 1rem; }
+  .btn-run:hover { background: var(--red); border-color: var(--red); }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: var(--white); color: var(--navy); border: 2px solid var(--navy); padding: 9px 18px; font-size: 0.9rem; }
+  .btn-secondary:hover { background: var(--navy); color: var(--white); }
+  .form-errors { margin-top: 12px; font-size: 0.84rem; color: var(--danger); display: none; }
+  .form-errors.show { display: block; }
+  .form-errors ul { margin: 4px 0 0 18px; }
+  .live-note { margin-top: 10px; font-size: 0.78rem; color: var(--subtle); text-align: center; }
 
-    .mode-panel { display: none; }
-    .mode-panel.active { display: block; }
+  /* ========== EMPTY STATE — a checklist of what's still needed ========== */
+  .empty-state { padding: 40px 28px; text-align: center; }
+  .empty-state h2 { font-size: 1.4rem; margin-bottom: 6px; }
+  .empty-state p { color: var(--muted); font-size: 0.92rem; }
+  .checklist { list-style: none; display: inline-flex; flex-direction: column; gap: 10px; margin-top: 22px; text-align: left; }
+  .checklist li { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--muted); }
+  .checklist .tick {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--field);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: transparent;
+  }
+  .checklist li.ok { color: var(--ink); }
+  .checklist li.ok .tick { background: var(--success); border-color: var(--success); color: var(--white); }
 
-    .historical-years-info {
-      font-size: 0.75rem;
-      color: var(--text-light);
-      margin-top: 6px;
-    }
+  /* ========== RESULTS ========== */
+  .result-head {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+    background: var(--navy); color: var(--white); border-radius: var(--radius); padding: 18px 22px;
+    border-left: 4px solid var(--red);
+  }
+  .result-head .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: .8; }
+  .result-head h2 { color: var(--white); font-size: 1.5rem; line-height: 1.2; }
+  .result-head .meta { font-size: 0.86rem; opacity: .85; margin-top: 2px; }
+  .result-head .chip { margin-left: auto; font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); padding: 5px 12px; border-radius: 999px; }
 
-    /* ── BUTTONS ─────────────────────────────────────────── */
-    .btn-calculate {
-      width: 100%;
-      padding: 12px;
-      background: var(--deep-green);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
-      font-family: 'Inter', system-ui, sans-serif;
-      letter-spacing: 0.02em;
-    }
-    .btn-calculate:hover { background: var(--slate-shade2); }
+  .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 1200px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 420px)  { .summary-strip { grid-template-columns: 1fr; } }
+  .kpi { background: var(--white); border: 1px solid var(--border); border-top: 3px solid var(--navy); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+  .kpi-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .kpi-value { font-family: var(--font-head); font-size: 1.6rem; font-weight: 600; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 0.78rem; color: var(--subtle); margin-top: 5px; }
+  .kpi.featured { background: var(--navy); border-color: var(--navy); border-top-color: var(--red); }
+  .kpi.featured .kpi-label { color: rgba(255,255,255,.8); }
+  .kpi.featured .kpi-value { color: var(--white); }
+  .kpi.featured .kpi-sub { color: rgba(255,255,255,.75); }
+  .kpi.success .kpi-value { color: var(--success); }
+  .kpi.danger { border-top-color: var(--danger); } .kpi.danger .kpi-value { color: var(--danger); }
 
-    /* ── SUMMARY CARDS ───────────────────────────────────── */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-    }
-    .summary-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 1.25rem;
-      text-align: center;
-    }
-    .summary-card.highlight {
-      background: var(--deep-green);
-      border-color: var(--deep-green);
-      color: white;
-    }
-    .summary-label {
-      font-size: 0.68rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--text-light);
-      margin-bottom: 4px;
-    }
-    .summary-card.highlight .summary-label { color: var(--mint); }
-    .summary-value {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: var(--deep-green);
-      line-height: 1.2;
-    }
-    .summary-card.highlight .summary-value { color: white; }
-    .summary-sub {
-      font-size: 0.72rem;
-      color: var(--text-light);
-      margin-top: 2px;
-    }
-    .summary-card.highlight .summary-sub { color: var(--grey-green); }
+  .actions-bar { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .actions-bar .hint { font-size: 0.8rem; }
 
-    /* ── CHARTS ──────────────────────────────────────────── */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.25rem;
-    }
-    .chart-wrapper {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem 1.5rem;
-    }
-    .chart-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--deep-green);
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--grey-green);
-    }
-    .chart-canvas-wrap {
-      position: relative;
-    }
+  .charts-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 1200px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); min-width: 0; }
+  .chart-title { font-family: var(--font-head); font-size: 1.08rem; font-weight: 600; color: var(--ink); }
+  .chart-sub { font-size: 0.8rem; color: var(--muted); margin: 2px 0 12px; }
+  .chart-canvas { position: relative; height: 300px; }
+  canvas { width: 100% !important; }
 
-    /* ── DATA TABLE ──────────────────────────────────────── */
-    .table-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--slate);
-      user-select: none;
-      padding: 8px 0;
-    }
-    .table-toggle:hover { color: var(--deep-green); }
-    .toggle-icon { transition: transform 0.2s; font-size: 0.7rem; }
-    .toggle-icon.open { transform: rotate(90deg); }
-    .data-table-wrap { overflow: hidden; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-    }
-    thead th {
-      background: var(--deep-green);
-      color: white;
-      padding: 8px 10px;
-      text-align: right;
-      font-weight: 600;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    thead th:first-child { text-align: left; border-radius: 0; }
-    tbody tr:nth-child(even) { background: var(--off-white); }
-    tbody tr:hover { background: var(--grey-green); }
-    tbody td {
-      padding: 7px 10px;
-      text-align: right;
-      color: var(--text-dark);
-      border-bottom: 1px solid var(--border);
-    }
-    tbody td:first-child { text-align: left; font-weight: 600; color: var(--slate); }
-    tbody tr:last-child td { font-weight: 700; color: var(--deep-green); background: #e8f4f0; }
+  .scenario-note {
+    background: var(--white); border: 1px solid var(--border); border-left: 4px solid var(--navy);
+    border-radius: var(--radius); padding: 12px 16px; font-size: 0.84rem; color: var(--text); line-height: 1.6;
+  }
+  .scenario-note strong { color: var(--ink); }
 
-    /* ── SCENARIO NOTE ───────────────────────────────────── */
-    .scenario-note {
-      background: linear-gradient(135deg, var(--grey-green), var(--mint));
-      border: 1px solid var(--slate-tint1);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.78rem;
-      color: var(--text-dark);
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
-    .scenario-note .note-icon { font-size: 1rem; flex-shrink: 0; }
+  /* year-by-year table */
+  details.breakdown { background: var(--white); border: 1px solid var(--border); border-top: 4px solid var(--red); border-radius: var(--radius); box-shadow: var(--shadow); }
+  details.breakdown > summary {
+    cursor: pointer; list-style: none; padding: 14px 18px;
+    font-family: var(--font-head); font-size: 1.1rem; font-weight: 600; color: var(--ink);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  details.breakdown > summary::-webkit-details-marker { display: none; }
+  details.breakdown > summary::before { content: '▸'; color: var(--navy); transition: transform .15s; }
+  details.breakdown[open] > summary::before { transform: rotate(90deg); }
+  details.breakdown[open] > summary { border-bottom: 1px solid var(--border); }
+  details.breakdown .s-hint { margin-left: auto; font-family: var(--font-body); font-size: 0.8rem; font-weight: 400; color: var(--muted); }
+  .table-scroll { overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; white-space: nowrap; }
+  .data-table thead tr { background: var(--navy); color: var(--white); }
+  .data-table thead th { padding: 10px 12px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; text-align: right; }
+  .data-table thead th:first-child { text-align: left; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); }
+  .data-table tbody tr:nth-child(even) { background: #FAFBFD; }
+  .data-table tbody tr:hover { background: var(--navy-tint); }
+  .data-table tbody td { padding: 8px 12px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+  .data-table tbody td:first-child { text-align: left; font-weight: 600; color: var(--ink); }
+  .data-table .yr-sub { font-weight: 400; color: var(--subtle); }
+  .data-table tfoot tr { background: var(--tint); border-top: 2px solid var(--navy); }
+  .data-table tfoot td { padding: 10px 12px; text-align: right; font-weight: 700; color: var(--ink); }
+  .data-table tfoot td:first-child { text-align: left; }
+  .return-badge { font-size: 0.78rem; font-weight: 700; padding: 2px 7px; border-radius: var(--radius); }
+  .return-badge.pos { background: #E6F2EB; color: var(--success); }
+  .return-badge.neg { background: #FBE6EC; color: var(--danger); }
+  .pos { color: var(--success); }
+  .neg { color: var(--danger); }
 
-    /* ── EMPTY STATE ─────────────────────────────────────── */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-      gap: 1rem;
-      color: var(--text-light);
-    }
-    .empty-icon { font-size: 3rem; opacity: 0.4; }
-    .empty-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.1rem;
-      color: var(--slate);
-    }
-    .empty-text { font-size: 0.82rem; max-width: 280px; }
-
-    /* ── FOOTER ──────────────────────────────────────────── */
-    footer {
-      background: var(--deep-green);
-      color: var(--grey-green);
-      padding: 1.5rem 2rem;
-      font-size: 0.72rem;
-      line-height: 1.7;
-    }
-    .footer-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .footer-disclaimer {
-      margin-bottom: 1rem;
-      color: var(--slate-tint1);
-    }
-    .footer-credit {
-      color: var(--mint);
-      font-weight: 600;
-      font-size: 0.75rem;
-    }
-
-    /* ── HELPERS ─────────────────────────────────────────── */
-    .allocation-warning {
-      font-size: 0.73rem;
-      color: var(--error);
-      font-weight: 500;
-      margin-top: 4px;
-      display: none;
-    }
-    .allocation-warning.show { display: block; }
-
-    /* Returns badge */
-    .return-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 4px;
-    }
-    .return-badge.pos { background: #d4f5e5; color: #067F42; }
-    .return-badge.neg { background: #fde8e8; color: var(--error); }
-
-    /* ── PRINT BUTTON ────────────────────────────────────── */
-    .btn-print {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background: white;
-      color: var(--deep-green);
-      border: 2px solid var(--deep-green);
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: 'Inter', system-ui, sans-serif;
-      letter-spacing: 0.02em;
-      text-decoration: none;
-    }
-    .btn-print:hover {
-      background: var(--deep-green);
-      color: white;
-    }
-    .btn-print svg { flex-shrink: 0; }
-    .print-bar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 12px;
-      padding: 0.5rem 0;
-    }
-    .print-hint {
-      font-size: 0.72rem;
-      color: var(--text-light);
-      font-style: italic;
-    }
-
-    /* ── RESPONSIVE ──────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .app-layout { grid-template-columns: 1fr; }
-      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
-      .charts-grid { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+  /* ========== FOOTER ========== */
+  .foot-wrap { max-width: 1600px; margin: 0 auto; padding: 0 20px 40px; }
+  @media (max-width: 480px) { .foot-wrap { padding: 0 16px 32px; } }
+  .disclaimer {
+    background: var(--ink); color: rgba(255, 255, 255, .72); font-size: 0.76rem; line-height: 1.6;
+    padding: 14px 20px; border-radius: var(--radius); border-left: 4px solid var(--red);
+  }
+  .disclaimer strong { color: var(--white); }
+  .site-footer {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
+    margin-top: 14px; padding: 14px 4px; border-top: 1px solid var(--border);
+    font-size: 0.78rem; color: var(--subtle);
+  }
+  .site-footer strong { color: var(--ink); }
+</style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════
-     HEADER
-═══════════════════════════════════════════════════════ -->
-<header>
-  <div class="header-logo">
-    <img src="data:image/png;base64,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" alt="Hoxton Wealth" style="height:36px; width:auto; display:block;" />
+<!-- HEADER -->
+<header class="site-header" id="top">
+  <div class="bar">
+    <a class="brand" href="#top" id="brandLogo" aria-label="William Gray — back to top"></a>
+    <div class="header-title">Investment Projection Tool</div>
   </div>
-  <div class="header-subtitle">Investment Projection Tool</div>
 </header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Portfolio projection</span>
+    <h1>Investment Projection Tool</h1>
+    <p class="lead">See how a portfolio could grow, at a steady assumed return or replaying real market returns from any period since 1996.</p>
+    <ol class="hero-steps">
+      <li><span class="n">1</span>Enter the client and amounts</li>
+      <li><span class="n">2</span>Build the portfolio</li>
+      <li><span class="n">3</span>Choose how to project</li>
+    </ol>
+  </div>
+</section>
 
 <div class="app-layout">
 
-<!-- ═══════════════════════════════════════════════════════
-     LEFT PANEL — INPUTS
-═══════════════════════════════════════════════════════ -->
+<!-- LEFT PANEL — INPUTS -->
 <div class="left-panel">
 
-  <!-- Step 1: Client Details -->
+  <!-- Step 1: Client details -->
   <div class="card">
-    <div class="card-header">
-      <div class="card-step">1</div>
-      <div class="card-title">Client Details</div>
-    </div>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label for="clientName">Client Name</label>
-        <input type="text" id="clientName" placeholder="e.g. James & Sarah Thompson" />
-      </div>
-      <div class="form-group">
-        <label for="clientAge">Client Age</label>
-        <input type="number" id="clientAge" min="18" max="80" placeholder="e.g. 40" />
-      </div>
-      <div class="form-group">
-        <label for="horizonYears">Investment Horizon (Years)</label>
-        <input type="number" id="horizonYears" min="1" max="30" placeholder="e.g. 20" />
-      </div>
-      <div class="form-group">
-        <label for="initialInvestment">Initial Lump Sum</label>
-        <div class="input-prefix">
-          <span>$</span>
-          <input type="number" id="initialInvestment" min="0" placeholder="100,000" />
+    <div class="card-head"><span class="step" id="step1">1</span>Client &amp; amounts</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label for="clientName">Client name <span class="opt">(optional)</span></label>
+          <input type="text" id="clientName" placeholder="e.g. James &amp; Sarah Thompson" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="clientAge">Current age <span class="opt">(optional)</span></label>
+          <input type="number" id="clientAge" min="18" max="80" placeholder="e.g. 40" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="horizonYears">Years to invest</label>
+          <input type="number" id="horizonYears" min="1" max="30" placeholder="e.g. 20" inputmode="numeric">
+          <span class="hint">1 to 30 years</span>
+        </div>
+        <div class="form-group">
+          <label for="initialInvestment">Lump sum today</label>
+          <div class="affix pre"><span>$</span><input type="text" id="initialInvestment" placeholder="100,000" inputmode="decimal" data-money></div>
+        </div>
+        <div class="form-group">
+          <label for="regularContrib">Regular saving</label>
+          <div class="affix pre"><span>$</span><input type="text" id="regularContrib" placeholder="0" inputmode="decimal" data-money></div>
+        </div>
+        <div class="form-group full">
+          <span class="label" id="freqLabel">Regular saving is paid</span>
+          <div class="seg" role="group" aria-labelledby="freqLabel">
+            <button type="button" id="freq-monthly" aria-pressed="true" onclick="setFrequency('monthly')">Monthly</button>
+            <button type="button" id="freq-annual" aria-pressed="false" onclick="setFrequency('annual')">Annually</button>
+          </div>
+          <span class="hint">Savings are added at the start of each year, before that year's growth.</span>
         </div>
       </div>
-      <div class="form-group">
-        <label for="regularContrib">Regular Contribution</label>
-        <div class="input-prefix">
-          <span>$</span>
-          <input type="number" id="regularContrib" min="0" placeholder="0" />
+    </div>
+  </div>
+
+  <!-- Step 2: Asset allocation -->
+  <div class="card">
+    <div class="card-head"><span class="step" id="step2">2</span>Portfolio mix<span id="totalBadge" class="total-badge empty">0% of 100%</span></div>
+    <div class="card-body">
+      <div class="label preset-label">Start from a ready-made mix</div>
+      <div class="preset-buttons">
+        <button type="button" class="btn-preset" data-preset="60/40" onclick="applyPreset('60/40', this)">60/40 Conservative</button>
+        <button type="button" class="btn-preset" data-preset="80/20" onclick="applyPreset('80/20', this)">80/20 Balanced</button>
+        <button type="button" class="btn-preset" data-preset="100eq" onclick="applyPreset('100eq', this)">100% Equity</button>
+        <button type="button" class="btn-preset reset" onclick="applyPreset('reset', this)">Clear</button>
+      </div>
+      <div class="alloc-bar" id="allocBar" aria-hidden="true"></div>
+      <div class="alloc-bar-note" id="allocNote">Drag the sliders or type a percentage. The mix must add up to 100%.</div>
+      <div id="allocationRows"><!-- populated by JS --></div>
+    </div>
+  </div>
+
+  <!-- Step 3: Projection mode -->
+  <div class="card">
+    <div class="card-head"><span class="step" id="step3">3</span>How to project</div>
+    <div class="card-body">
+      <div class="seg" role="group" aria-label="Projection mode">
+        <button type="button" id="tab-historical" aria-pressed="true" onclick="switchMode('historical')">Replay history</button>
+        <button type="button" id="tab-linear" aria-pressed="false" onclick="switchMode('linear')">Steady return</button>
+      </div>
+
+      <div id="panel-historical" class="mode-panel active">
+        <p class="mode-desc">Applies the real year-by-year returns of this mix, starting from the year you pick. Good years and bad years arrive in the order they really happened.</p>
+        <div class="form-group">
+          <label for="histStartYear">Start the replay in</label>
+          <select id="histStartYear"><!-- populated by JS --></select>
+        </div>
+        <div class="hist-info" id="histYearsInfo">Enter the years to invest to see the period covered.</div>
+      </div>
+
+      <div id="panel-linear" class="mode-panel">
+        <p class="mode-desc">Grows the portfolio by the same return every year. Simple and smooth, but real markets never move this way.</p>
+        <div class="form-group">
+          <label for="estimatedReturn">Assumed return each year</label>
+          <div class="affix post"><input type="number" id="estimatedReturn" min="-20" max="50" step="0.1" placeholder="e.g. 7.5" inputmode="decimal"><span>%</span></div>
+          <span class="hint">Before fees, tax and inflation</span>
         </div>
       </div>
-      <div class="form-group full">
-        <label for="contribFrequency">Contribution Frequency</label>
-        <select id="contribFrequency">
-          <option value="monthly">Monthly</option>
-          <option value="annual">Annual</option>
-        </select>
-      </div>
     </div>
   </div>
 
-  <!-- Step 2: Asset Allocation -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-step">2</div>
-      <div class="card-title">Asset Allocation</div>
-      <div id="totalBadge" class="total-badge invalid" style="margin-left:auto">0%</div>
-    </div>
-
-    <div class="preset-buttons">
-      <button class="btn-preset" onclick="applyPreset('60/40')">60/40 Conservative</button>
-      <button class="btn-preset" onclick="applyPreset('80/20')">80/20 Balanced</button>
-      <button class="btn-preset" onclick="applyPreset('100eq')">100% Equity</button>
-      <button class="btn-preset" onclick="applyPreset('reset')">Reset</button>
-    </div>
-
-    <div id="allocationRows">
-      <!-- Populated by JS -->
-    </div>
-
-    <div id="allocWarning" class="allocation-warning">
-      ⚠ Allocation must total exactly 100%
-    </div>
+  <div class="card run-card">
+    <button type="button" class="btn-run" onclick="calculate()">Show projection</button>
+    <div class="form-errors" id="formErrors" role="alert"></div>
+    <div class="live-note" id="liveNote" hidden>Results update as you change the inputs.</div>
   </div>
-
-  <!-- Step 3: Projection Mode -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-step">3</div>
-      <div class="card-title">Projection Mode</div>
-    </div>
-
-    <div class="mode-tabs">
-      <button class="mode-tab" id="tab-linear" onclick="switchMode('linear')">📈 Linear Projection</button>
-      <button class="mode-tab active" id="tab-historical" onclick="switchMode('historical')">📊 Historical Scenario</button>
-    </div>
-
-    <div id="panel-linear" class="mode-panel">
-      <div class="form-group">
-        <label for="estimatedReturn">Estimated Annual Return (%)</label>
-        <input type="number" id="estimatedReturn" min="-20" max="50" step="0.1" placeholder="e.g. 7.5" />
-      </div>
-    </div>
-
-    <div id="panel-historical" class="mode-panel active">
-      <div class="form-group">
-        <label for="histStartYear">Historical Start Year</label>
-        <select id="histStartYear">
-          <!-- Populated by JS -->
-        </select>
-      </div>
-      <div class="historical-years-info" id="histYearsInfo">
-        Select a start year to see the historical scenario
-      </div>
-    </div>
-  </div>
-
-  <button class="btn-calculate" onclick="calculate()">Generate Projection</button>
 
 </div><!-- /left-panel -->
 
-<!-- ═══════════════════════════════════════════════════════
-     RIGHT PANEL — RESULTS
-═══════════════════════════════════════════════════════ -->
+<!-- RIGHT PANEL — RESULTS -->
 <div class="right-panel" id="rightPanel">
 
-  <div class="empty-state" id="emptyState">
-    <div class="empty-icon">📊</div>
-    <div class="empty-title">Ready to project</div>
-    <div class="empty-text">Fill in client details, build your allocation, choose a projection mode, then hit Generate.</div>
+  <div class="card empty-state" id="emptyState">
+    <h2>Your projection will appear here</h2>
+    <p>Complete the three steps on the left, then press <strong>Show projection</strong>.</p>
+    <ul class="checklist" id="checklist">
+      <li data-check="horizon"><span class="tick">✓</span>Years to invest (1–30)</li>
+      <li data-check="money"><span class="tick">✓</span>A lump sum, a regular saving, or both</li>
+      <li data-check="alloc"><span class="tick">✓</span>A portfolio mix that adds up to 100%</li>
+      <li data-check="mode"><span class="tick">✓</span>A start year or an assumed return</li>
+    </ul>
   </div>
 
-  <div id="resultsContent" style="display:none; display:flex; flex-direction:column; gap:1.25rem;">
+  <div id="resultsContent" style="display:none; flex-direction:column; gap:20px;">
 
-    <!-- Client summary banner -->
-    <div class="card" style="background: var(--deep-green); border-color: var(--deep-green); color: white; padding: 1rem 1.5rem;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-        <div>
-          <div style="font-family:'Playfair Display',Georgia,serif; font-size:1.1rem; font-weight:600;" id="resultClientName">Client Name</div>
-          <div style="font-size:0.75rem; color:var(--mint); margin-top:2px;" id="resultSubtitle">—</div>
-        </div>
-        <div id="resultModeBadge" style="font-size:0.72rem; font-weight:600; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; color:var(--mint);"></div>
+    <div class="result-head">
+      <div>
+        <div class="kicker">Projection for</div>
+        <h2 id="resultClientName">Client</h2>
+        <div class="meta" id="resultSubtitle">—</div>
+      </div>
+      <div class="chip" id="resultModeBadge"></div>
+    </div>
+
+    <div class="summary-strip">
+      <div class="kpi">
+        <div class="kpi-label">Total paid in</div>
+        <div class="kpi-value" id="sumTotalInvested">—</div>
+        <div class="kpi-sub" id="sumInvestedSub">—</div>
+      </div>
+      <div class="kpi featured">
+        <div class="kpi-label">Projected value</div>
+        <div class="kpi-value" id="sumFinalValue">—</div>
+        <div class="kpi-sub" id="sumFinalSub">—</div>
+      </div>
+      <div class="kpi" id="kpiGrowth">
+        <div class="kpi-label">Investment growth</div>
+        <div class="kpi-value" id="sumGrowth">—</div>
+        <div class="kpi-sub" id="sumGrowthSub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Average yearly return</div>
+        <div class="kpi-value" id="sumAvgReturn">—</div>
+        <div class="kpi-sub" id="sumAvgSub">—</div>
       </div>
     </div>
 
-    <!-- Summary numbers -->
-    <div class="summary-grid">
-      <div class="summary-card">
-        <div class="summary-label">Total Invested</div>
-        <div class="summary-value" id="sumTotalInvested">—</div>
-        <div class="summary-sub" id="sumInvestedSub">—</div>
-      </div>
-      <div class="summary-card highlight">
-        <div class="summary-label">Projected Final Value</div>
-        <div class="summary-value" id="sumFinalValue">—</div>
-        <div class="summary-sub" id="sumFinalSub">—</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">Total Growth</div>
-        <div class="summary-value" id="sumGrowth">—</div>
-        <div class="summary-sub" id="sumGrowthSub">—</div>
-      </div>
-    </div>
-
-    <!-- Print bar -->
-    <div class="print-bar">
-      <span class="print-hint">Opens a print-ready A4 landscape view → Save as PDF</span>
-      <button class="btn-print" onclick="printReport()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-          <rect x="6" y="14" width="12" height="8"/>
+    <div class="actions-bar">
+      <span class="hint">Opens an A4 landscape report you can save as PDF</span>
+      <button type="button" class="btn-secondary" onclick="printReport()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
         </svg>
-        Print / Export PDF
+        Print / save as PDF
       </button>
     </div>
 
-    <!-- Charts -->
     <div class="charts-grid">
-      <div class="chart-wrapper">
-        <div class="chart-title">Portfolio Growth Over Time</div>
-        <div class="chart-canvas-wrap" style="height:300px;">
-          <canvas id="growthChart"></canvas>
-        </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Portfolio value over time</div>
+        <div class="chart-sub">The gap between the two lines is investment growth.</div>
+        <div class="chart-canvas"><canvas id="growthChart"></canvas></div>
       </div>
-      <div class="chart-wrapper">
-        <div class="chart-title">Asset Allocation</div>
-        <div class="chart-canvas-wrap" style="height:300px;">
-          <canvas id="pieChart"></canvas>
-        </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Portfolio mix</div>
+        <div class="chart-sub">Held at these weights throughout.</div>
+        <div class="chart-canvas"><canvas id="pieChart"></canvas></div>
       </div>
     </div>
 
-    <!-- Scenario note (historical only) -->
-    <div class="scenario-note" id="scenarioNote" style="display:none">
-      <span class="note-icon">ℹ️</span>
-      <span id="scenarioNoteText"></span>
-    </div>
+    <div class="scenario-note" id="scenarioNote" style="display:none"><span id="scenarioNoteText"></span></div>
 
-    <!-- Year-by-year data table -->
-    <div class="card" style="padding:1rem 1.5rem;">
-      <div class="table-toggle" onclick="toggleTable()">
-        <span class="toggle-icon" id="toggleIcon">▶</span>
-        <span>Year-by-Year Breakdown</span>
-      </div>
-      <div class="data-table-wrap" id="dataTableWrap" style="display:none; margin-top:0.75rem;">
-        <table id="dataTable">
-          <thead>
-            <tr>
-              <th>Year</th>
-              <th>Age</th>
-              <th>Annual Return</th>
-              <th>Contributions</th>
-              <th>Growth</th>
-              <th>Portfolio Value</th>
-            </tr>
-          </thead>
+    <details class="breakdown" id="breakdown">
+      <summary>Year-by-year breakdown <span class="s-hint">Click to show or hide</span></summary>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr id="dataTableHead"></tr></thead>
           <tbody id="dataTableBody"></tbody>
+          <tfoot id="dataTableFoot"></tfoot>
         </table>
       </div>
-    </div>
+    </details>
 
   </div><!-- /resultsContent -->
 
 </div><!-- /right-panel -->
 </div><!-- /app-layout -->
 
-<!-- ═══════════════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════════════ -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-disclaimer">
-      <strong style="color:var(--mint)">Important Disclaimer:</strong> This tool is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning only. All figures are shown in USD and do not account for taxes, fees, inflation, or currency fluctuations unless otherwise stated. Hoxton Wealth and its advisers are not liable for investment decisions made based on this tool. Always seek independent regulated financial advice before making investment decisions.
-    </div>
-    <div class="footer-credit">Created by William Gray · Hoxton Wealth · Investment Projection Tool v1.0</div>
+<!-- FOOTER -->
+<div class="foot-wrap">
+  <div class="disclaimer">
+    <strong>Important:</strong> This tool is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning only. All figures are shown in USD and do not account for taxes, fees, inflation, or currency fluctuations unless otherwise stated. William Gray accepts no liability for investment decisions made based on this tool. Always seek independent regulated financial advice before making investment decisions.
   </div>
-</footer>
+  <div class="site-footer">
+    <span>Investment Projection Tool — a tool by <strong>William Gray</strong>. Unauthorised reproduction or distribution is prohibited.</span>
+    <span>© <span id="yearNow">2026</span> William Gray</span>
+  </div>
+</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════════════════ -->
 <script>
 // ── HISTORICAL DATA ────────────────────────────────────────────
 // Annual total returns (%) for each asset class, 1996–2025.
@@ -865,74 +593,126 @@ const ASSET_RETURNS = {
 };
 
 // ── ASSET CONFIG ───────────────────────────────────────────────
+// Colours: AEF navy and red lead, supported by distinct blues, greens and warm tones
 const ASSETS = [
-  { key: 'sp500',     label: 'S&P 500',               ticker: 'US Large Cap',        color: '#033839' },
-  { key: 'ftse100',   label: 'FTSE 100',               ticker: 'UK Large Cap',        color: '#1AB0C4' },
-  { key: 'msciWorld', label: 'MSCI World Index',       ticker: 'Global Equity',       color: '#FFA766' },
-  { key: 'msciEM',    label: 'MSCI Emerging Markets',  ticker: 'EM Equity',           color: '#AF9BE0' },
-  { key: 'bonds',     label: 'Bloomberg Aggregate Bond', ticker: 'Blended Bond',      color: '#196695' },
-  { key: 'gold',      label: 'Gold',                   ticker: 'Commodity',           color: '#FFD700' },
-  { key: 'cash',      label: 'Cash (USD)',              ticker: 'T-Bills',             color: '#ADC2C2' },
-  { key: 'xlk',       label: 'State Street Technology ETF', ticker: 'XLK · pre-1999 = sector proxy', color: '#F5B8A0' },
-  { key: 'euroStoxx', label: 'EURO STOXX 50',          ticker: 'European Equity',     color: '#527C7E' },
+  { key: 'sp500',     label: 'S&P 500',                     ticker: 'US Large Cap',                  color: '#0A3161' },
+  { key: 'ftse100',   label: 'FTSE 100',                    ticker: 'UK Large Cap',                  color: '#B31942' },
+  { key: 'msciWorld', label: 'MSCI World Index',            ticker: 'Global Equity',                 color: '#4C7BC0' },
+  { key: 'msciEM',    label: 'MSCI Emerging Markets',       ticker: 'EM Equity',                     color: '#8E5BA8' },
+  { key: 'bonds',     label: 'Bloomberg Aggregate Bond',    ticker: 'Blended Bond',                  color: '#2E7D6B' },
+  { key: 'gold',      label: 'Gold',                        ticker: 'Commodity',                     color: '#C9A227' },
+  { key: 'cash',      label: 'Cash (USD)',                  ticker: 'T-Bills',                       color: '#A7B3C4' },
+  { key: 'xlk',       label: 'State Street Technology ETF', ticker: 'XLK · pre-1999 = sector proxy', color: '#5FB3D9' },
+  { key: 'euroStoxx', label: 'EURO STOXX 50',               ticker: 'European Equity',               color: '#E08A6B' },
 ];
 
-// ── ALLOCATION STATE ───────────────────────────────────────────
-let allocations = { sp500:0, ftse100:0, msciWorld:0, msciEM:0, bonds:0, gold:0, cash:0, xlk:0, euroStoxx:0 };
+const C = { navy: '#0A3161', red: '#B31942', ink: '#0B1A2E', muted: '#4A5568', subtle: '#718096', border: '#DDE3EC', success: '#1E6B43', danger: '#B31942' };
+const LAST_YEAR = YEARS[YEARS.length - 1];
 
-// ── BUILD ALLOCATION ROWS ──────────────────────────────────────
+// ── STATE ──────────────────────────────────────────────────────
+let allocations = { sp500:0, ftse100:0, msciWorld:0, msciEM:0, bonds:0, gold:0, cash:0, xlk:0, euroStoxx:0 };
+let currentMode = 'historical';
+let frequency   = 'monthly';
+let hasRun      = false;
+let lastResult  = null;
+
+// ── HELPERS ────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function num(id) {
+  const raw = String($(id).value).replace(/[^0-9.\-]/g, '');
+  const v = parseFloat(raw);
+  return isNaN(v) ? NaN : v;
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+function fmt(n) {
+  const sign = n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  if (a >= 1e6) return sign + '$' + (a / 1e6).toFixed(2) + 'M';
+  return sign + '$' + Math.round(a).toLocaleString('en-US');
+}
+function fmtFull(n) { return (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('en-US'); }
+function pct(n, dp = 1) { return (n >= 0 ? '+' : '') + n.toFixed(dp) + '%'; }
+
+// William Gray wordmark: 'dark' for light backgrounds, 'light' for navy (print header)
+function logoSVG(variant = 'dark') {
+  const light = variant === 'light';
+  const tile = light ? '#FFFFFF' : '#0A3161', mono = light ? '#0A3161' : '#FFFFFF';
+  const word = light ? '#FFFFFF' : '#0B1A2E', tag = light ? 'rgba(255,255,255,0.8)' : '#4A5568';
+  return `<svg viewBox="0 0 204 48" role="img" aria-label="William Gray — Financial Planning" xmlns="http://www.w3.org/2000/svg">
+    <rect width="48" height="48" rx="5" fill="${tile}"/>
+    <text x="24" y="29" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-weight="600" font-size="21" letter-spacing="-0.5" fill="${mono}">WG</text>
+    <rect x="12" y="35" width="24" height="3" fill="#B31942"/>
+    <text x="60" y="24" font-family="'Source Serif 4', Georgia, serif" font-weight="600" font-size="21" letter-spacing="-0.2" fill="${word}">William Gray</text>
+    <text x="61" y="39" font-family="'Public Sans', Arial, sans-serif" font-weight="700" font-size="8.2" letter-spacing="1.7" fill="${tag}">FINANCIAL PLANNING</text>
+  </svg>`;
+}
+
+// ── ALLOCATION ROWS ────────────────────────────────────────────
 function buildAllocationRows() {
-  const container = document.getElementById('allocationRows');
+  const container = $('allocationRows');
   container.innerHTML = '';
   ASSETS.forEach(asset => {
     const row = document.createElement('div');
-    row.className = 'asset-row';
+    row.className = 'asset-row zero';
+    row.id = `row_${asset.key}`;
     row.innerHTML = `
       <div class="asset-name">
-        <div class="asset-dot" style="background:${asset.color}"></div>
+        <span class="asset-dot" style="background:${asset.color}"></span>
         <div>
-          <div>${asset.label}</div>
+          <div class="asset-label">${asset.label}</div>
           <div class="asset-ticker">${asset.ticker}</div>
         </div>
       </div>
       <input type="range" id="range_${asset.key}" min="0" max="100" step="1" value="0"
-             oninput="syncAlloc('${asset.key}','range')" />
-      <input type="number" class="asset-pct-input" id="pct_${asset.key}" min="0" max="100" step="1" value="0"
-             oninput="syncAlloc('${asset.key}','pct')" />
-    `;
+             aria-label="${asset.label} weight" oninput="syncAlloc('${asset.key}','range')">
+      <div class="asset-pct"><div class="affix post">
+        <input type="number" class="asset-pct-input" id="pct_${asset.key}" min="0" max="100" step="1" value="0"
+               aria-label="${asset.label} percentage" inputmode="numeric" oninput="syncAlloc('${asset.key}','pct')"><span>%</span>
+      </div></div>`;
     container.appendChild(row);
   });
 }
 
 function syncAlloc(key, source) {
-  const rangeEl = document.getElementById(`range_${key}`);
-  const pctEl   = document.getElementById(`pct_${key}`);
+  const rangeEl = $(`range_${key}`), pctEl = $(`pct_${key}`);
   if (source === 'range') {
     pctEl.value = rangeEl.value;
   } else {
     let v = Math.min(100, Math.max(0, parseInt(pctEl.value) || 0));
-    pctEl.value = v;
+    if (pctEl.value !== '') pctEl.value = v;
     rangeEl.value = v;
   }
   allocations[key] = parseInt(rangeEl.value);
+  clearPresetHighlight();
   updateTotalBadge();
-}
-
-function updateTotalBadge() {
-  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
-  const badge = document.getElementById('totalBadge');
-  const warn  = document.getElementById('allocWarning');
-  badge.textContent = total + '%';
-  badge.className = 'total-badge ' + (total === 100 ? 'valid' : 'invalid');
-  warn.classList.toggle('show', total !== 100 && total > 0);
-  return total;
+  onInputChanged();
 }
 
 function setAlloc(key, value) {
   const v = Math.max(0, Math.min(100, value));
   allocations[key] = v;
-  document.getElementById(`range_${key}`).value = v;
-  document.getElementById(`pct_${key}`).value   = v;
+  $(`range_${key}`).value = v;
+  $(`pct_${key}`).value   = v;
+}
+
+function updateTotalBadge() {
+  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
+  const badge = $('totalBadge'), note = $('allocNote');
+  badge.textContent = total === 100 ? '100% ✓' : `${total}% of 100%`;
+  badge.className = 'total-badge ' + (total === 100 ? 'valid' : total === 0 ? 'empty' : 'invalid');
+
+  // stacked bar + per-row dimming
+  $('allocBar').innerHTML = ASSETS.filter(a => allocations[a.key] > 0)
+    .map(a => `<div style="width:${Math.min(allocations[a.key], 100)}%;background:${a.color}"></div>`).join('');
+  ASSETS.forEach(a => $(`row_${a.key}`).classList.toggle('zero', allocations[a.key] === 0));
+
+  note.classList.toggle('over', total > 100);
+  if (total === 0)        note.textContent = 'Drag the sliders or type a percentage. The mix must add up to 100%.';
+  else if (total < 100)   note.textContent = `${100 - total}% still to allocate.`;
+  else if (total > 100)   note.textContent = `${total - 100}% too much. Reduce one or more holdings.`;
+  else                    note.textContent = 'Fully allocated.';
+  $('step2').classList.toggle('done', total === 100);
+  return total;
 }
 
 // ── PRESETS ────────────────────────────────────────────────────
@@ -942,848 +722,509 @@ const PRESETS = {
   '100eq': { sp500:35, ftse100:10, msciWorld:25, msciEM:15, bonds:0,  gold:0,  cash:0, xlk:10,euroStoxx:5 },
   'reset': { sp500:0,  ftse100:0,  msciWorld:0,  msciEM:0,  bonds:0,  gold:0,  cash:0, xlk:0, euroStoxx:0 },
 };
-
-function applyPreset(name) {
-  document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-  if (name !== 'reset') event.target.classList.add('active');
+function clearPresetHighlight() { document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active')); }
+function applyPreset(name, btn) {
+  clearPresetHighlight();
+  if (name !== 'reset' && btn) btn.classList.add('active');
   const preset = PRESETS[name];
   ASSETS.forEach(a => setAlloc(a.key, preset[a.key]));
   updateTotalBadge();
+  onInputChanged();
 }
 
-// ── MODE SWITCH ────────────────────────────────────────────────
-let currentMode = 'historical';
+// ── MODE & FREQUENCY ───────────────────────────────────────────
 function switchMode(mode) {
   currentMode = mode;
-  document.getElementById('tab-linear').classList.toggle('active', mode === 'linear');
-  document.getElementById('tab-historical').classList.toggle('active', mode === 'historical');
-  document.getElementById('panel-linear').classList.toggle('active', mode === 'linear');
-  document.getElementById('panel-historical').classList.toggle('active', mode === 'historical');
+  $('tab-linear').setAttribute('aria-pressed', mode === 'linear');
+  $('tab-historical').setAttribute('aria-pressed', mode === 'historical');
+  $('panel-linear').classList.toggle('active', mode === 'linear');
+  $('panel-historical').classList.toggle('active', mode === 'historical');
+  onInputChanged();
+}
+function setFrequency(f) {
+  frequency = f;
+  $('freq-monthly').setAttribute('aria-pressed', f === 'monthly');
+  $('freq-annual').setAttribute('aria-pressed', f === 'annual');
+  onInputChanged();
 }
 
-// ── POPULATE HISTORICAL YEAR DROPDOWN ─────────────────────────
+// ── HISTORICAL YEAR DROPDOWN ───────────────────────────────────
 function populateYearDropdown() {
-  const sel = document.getElementById('histStartYear');
+  const sel = $('histStartYear');
   sel.innerHTML = '';
   YEARS.forEach(y => {
-    // All full calendar years through the most recent year in the dataset
-    // are eligible as start years.
     const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
+    opt.value = y; opt.textContent = y;
     sel.appendChild(opt);
   });
   sel.value = 1996;
   updateHistYearsInfo();
-  sel.addEventListener('change', updateHistYearsInfo);
+  sel.addEventListener('change', () => { updateHistYearsInfo(); onInputChanged(); });
 }
 
 function updateHistYearsInfo() {
-  const startYear = parseInt(document.getElementById('histStartYear').value);
-  const horizon   = parseInt(document.getElementById('horizonYears').value) || 0;
+  const startYear = parseInt($('histStartYear').value);
+  const horizon   = parseInt($('horizonYears').value) || 0;
   const endYear   = startYear + horizon - 1;
-  const maxEnd    = 2025;
-  const info      = document.getElementById('histYearsInfo');
-  if (!horizon) {
-    info.textContent = 'Enter investment horizon above to see available range.';
-    return;
-  }
-  if (endYear > maxEnd) {
-    info.innerHTML = `⚠️ <strong>Note:</strong> A ${horizon}-year window from ${startYear} extends to ${endYear}. Data available up to 2025; years beyond will use the most recent available return.`;
-    info.style.color = 'var(--warning)';
+  const info      = $('histYearsInfo');
+  info.classList.remove('warn');
+  if (!horizon) { info.textContent = 'Enter the years to invest to see the period covered.'; return; }
+  if (endYear > LAST_YEAR) {
+    info.classList.add('warn');
+    info.innerHTML = `A ${horizon}-year replay from ${startYear} runs to ${endYear}, but data ends in ${LAST_YEAR}. Years after ${LAST_YEAR} repeat the ${LAST_YEAR} return. Pick ${Math.max(YEARS[0], LAST_YEAR - horizon + 1)} or earlier to use real data throughout.`;
   } else {
-    info.innerHTML = `📅 Scenario: <strong>${startYear}–${endYear}</strong> (${horizon} years of historical data)`;
-    info.style.color = 'var(--text-light)';
+    info.innerHTML = `Replays <strong>${startYear}–${endYear}</strong>: ${horizon} years of real market returns.`;
   }
+}
+
+// ── VALIDATION ─────────────────────────────────────────────────
+function readInputs() {
+  const horizon = parseInt($('horizonYears').value);
+  const initialInvest  = num('initialInvestment');
+  const regularContrib = num('regularContrib');
+  const r = parseFloat($('estimatedReturn').value);
+  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
+  const checks = {
+    horizon: horizon >= 1 && horizon <= 30,
+    money: (initialInvest > 0) || (regularContrib > 0),
+    alloc: total === 100,
+    mode: currentMode === 'historical' || !isNaN(r),
+  };
+  const errors = [];
+  if (!checks.horizon) errors.push('Enter between 1 and 30 years to invest.');
+  if (!checks.money)   errors.push('Enter a lump sum, a regular saving, or both.');
+  if (!checks.alloc)   errors.push(total > 100 ? `The portfolio mix adds up to ${total}%; bring it down to 100%.` : `The portfolio mix adds up to ${total}%; it needs to reach 100%.`);
+  if (!checks.mode)    errors.push('Enter an assumed yearly return.');
+  return { checks, errors, horizon, initialInvest: initialInvest > 0 ? initialInvest : 0, regularContrib: regularContrib > 0 ? regularContrib : 0, r };
+}
+
+function refreshChecklist() {
+  const { checks } = readInputs();
+  document.querySelectorAll('#checklist li').forEach(li => li.classList.toggle('ok', !!checks[li.dataset.check]));
+  $('step1').classList.toggle('done', checks.horizon && checks.money);
+  $('step3').classList.toggle('done', checks.mode);
+  $('horizonYears').classList.toggle('invalid', $('horizonYears').value !== '' && !checks.horizon);
+}
+
+let liveTimer = null;
+function onInputChanged() {
+  refreshChecklist();
+  if (!hasRun) { $('formErrors').classList.remove('show'); return; }
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => calculate(true), 250);
 }
 
 // ── CALCULATION ENGINE ─────────────────────────────────────────
 let growthChartInstance = null;
 let pieChartInstance    = null;
 
-function fmt(n) {
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-  return '$' + Math.round(n).toLocaleString('en-US');
-}
-function fmtFull(n) {
-  return '$' + Math.round(n).toLocaleString('en-US');
-}
-
-function calculate() {
-  // Validate allocation
-  const total = Object.values(allocations).reduce((a, b) => a + b, 0);
-  if (total !== 100) {
-    document.getElementById('allocWarning').classList.add('show');
-    alert('Please ensure your asset allocation totals exactly 100% before generating a projection.');
+function calculate(live = false) {
+  const inp = readInputs();
+  const errBox = $('formErrors');
+  if (inp.errors.length) {
+    errBox.innerHTML = (live ? '<strong>Results not updated:</strong>' : '<strong>Before projecting:</strong>') +
+      '<ul>' + inp.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+    errBox.classList.add('show');
     return;
   }
+  errBox.classList.remove('show');
 
-  const clientName     = document.getElementById('clientName').value.trim() || 'Client';
-  const clientAge      = parseInt(document.getElementById('clientAge').value) || 0;
-  const horizon        = parseInt(document.getElementById('horizonYears').value);
-  const initialInvest  = parseFloat(document.getElementById('initialInvestment').value) || 0;
-  const regularContrib = parseFloat(document.getElementById('regularContrib').value) || 0;
-  const frequency      = document.getElementById('contribFrequency').value;
-
-  if (!horizon || horizon < 1 || horizon > 30) {
-    alert('Please enter an investment horizon between 1 and 30 years.');
-    return;
-  }
-  if (initialInvest <= 0 && regularContrib <= 0) {
-    alert('Please enter an initial investment and/or regular contributions.');
-    return;
-  }
-
-  const annualContrib = frequency === 'monthly' ? regularContrib * 12 : regularContrib;
+  const clientName     = $('clientName').value.trim() || 'Client';
+  const clientAge      = parseInt($('clientAge').value) || 0;
+  const horizon        = inp.horizon;
+  const initialInvest  = inp.initialInvest;
+  const regularContrib = inp.regularContrib;
+  const annualContrib  = frequency === 'monthly' ? regularContrib * 12 : regularContrib;
 
   // Build annual returns array
   let annualReturns = [];
+  let marketYears = [];
   let modeLabel = '';
+  const startYear = parseInt($('histStartYear').value);
 
   if (currentMode === 'linear') {
-    const r = parseFloat(document.getElementById('estimatedReturn').value);
-    if (isNaN(r)) { alert('Please enter an estimated annual return.'); return; }
-    for (let i = 0; i < horizon; i++) annualReturns.push(r);
-    modeLabel = `Linear @ ${r}% p.a.`;
+    for (let i = 0; i < horizon; i++) annualReturns.push(inp.r);
+    modeLabel = `Steady return @ ${inp.r}% a year`;
   } else {
-    const startYear = parseInt(document.getElementById('histStartYear').value);
     for (let i = 0; i < horizon; i++) {
       const yr = startYear + i;
-      const yIdx = YEARS.indexOf(Math.min(yr, 2025));
+      const yIdx = YEARS.indexOf(Math.min(yr, LAST_YEAR));
       const idx  = yIdx >= 0 ? yIdx : YEARS.length - 1;
-      // Weighted blend
       let blended = 0;
-      ASSETS.forEach(a => {
-        blended += (allocations[a.key] / 100) * ASSET_RETURNS[a.key][idx];
-      });
+      ASSETS.forEach(a => { blended += (allocations[a.key] / 100) * ASSET_RETURNS[a.key][idx]; });
       annualReturns.push(parseFloat(blended.toFixed(2)));
+      marketYears.push(YEARS[idx]);
     }
-    modeLabel = `Historical scenario: ${startYear}–${startYear + horizon - 1}`;
+    modeLabel = `Historical replay ${startYear}–${startYear + horizon - 1}`;
   }
 
-  // Project portfolio values year-by-year
-  const portfolioValues = [];
-  const contributionsArr = [];
-  const ageArr = [];
+  // Project year by year — contributions at the start of each year, then growth
+  const portfolioValues = [], contributionsArr = [], ageArr = [], rows = [];
   let value = initialInvest;
   let totalContributed = initialInvest;
-
   for (let i = 0; i < horizon; i++) {
     const r = annualReturns[i] / 100;
-    // Contributions at start of year (before growth)
-    if (i > 0 || annualContrib > 0) {
-      value += annualContrib;
-      totalContributed += annualContrib;
-    }
-    const valueBeforeGrowth = value;
+    value += annualContrib;
+    totalContributed += annualContrib;
+    const growthAmt = value * r;
     value = value * (1 + r);
     portfolioValues.push(Math.round(value));
     contributionsArr.push(Math.round(totalContributed));
     ageArr.push(clientAge ? clientAge + i + 1 : null);
+    rows.push({
+      year: i + 1,
+      calYear: new Date().getFullYear() + i + 1,
+      marketYear: marketYears[i] || null,
+      age: ageArr[i],
+      ret: annualReturns[i],
+      contrib: (i === 0 ? initialInvest : 0) + annualContrib,
+      growth: growthAmt,
+      value,
+    });
   }
 
-  const finalValue  = portfolioValues[portfolioValues.length - 1];
+  const finalValue  = value;
   const totalGrowth = finalValue - totalContributed;
-  const growthPct   = totalContributed > 0 ? ((finalValue / totalContributed - 1) * 100).toFixed(1) : 0;
+  const growthPct   = totalContributed > 0 ? (finalValue / totalContributed - 1) * 100 : 0;
+  const geoAvg      = (Math.pow(annualReturns.reduce((p, r) => p * (1 + r / 100), 1), 1 / horizon) - 1) * 100;
+  const worst       = Math.min(...annualReturns);
+  const worstIdx    = annualReturns.indexOf(worst);
 
-  // ── UPDATE SUMMARY ──
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('resultsContent').style.display = 'flex';
+  // ── SUMMARY ──
+  hasRun = true;
+  $('liveNote').hidden = false;
+  $('emptyState').style.display = 'none';
+  $('resultsContent').style.display = 'flex';
 
-  document.getElementById('resultClientName').textContent = clientName;
-  document.getElementById('resultSubtitle').textContent =
-    (clientAge ? `Age ${clientAge} · ` : '') + `${horizon}-year horizon`;
-  document.getElementById('resultModeBadge').textContent = modeLabel;
+  const subtitle = (clientAge ? `Age ${clientAge} today · ` : '') + `${horizon}-year horizon`;
+  $('resultClientName').textContent = clientName;
+  $('resultSubtitle').textContent   = subtitle;
+  $('resultModeBadge').textContent  = modeLabel;
 
-  document.getElementById('sumTotalInvested').textContent = fmt(totalContributed);
-  document.getElementById('sumInvestedSub').textContent =
-    `$${Math.round(initialInvest).toLocaleString()} lump sum` +
-    (annualContrib > 0 ? ` + ${fmt(annualContrib)}/yr` : '');
+  const investedSub = (initialInvest > 0 ? `${fmtFull(initialInvest)} lump sum` : 'No lump sum') +
+    (annualContrib > 0 ? ` + ${fmt(annualContrib)} a year` : '');
+  const finalSub = clientAge ? `At age ${clientAge + horizon}, after ${horizon} years` : `After ${horizon} years`;
+  const growthSub = `${pct(growthPct)} on what was paid in`;
+  const avgSub = currentMode === 'historical'
+    ? `Worst year ${pct(worst)} (${marketYears[worstIdx]})`
+    : 'Same return every year';
 
-  document.getElementById('sumFinalValue').textContent = fmt(finalValue);
-  document.getElementById('sumFinalSub').textContent =
-    clientAge ? `When client is age ${clientAge + horizon}` : `After ${horizon} years`;
-
-  document.getElementById('sumGrowth').textContent = fmt(totalGrowth);
-  document.getElementById('sumGrowthSub').textContent = `+${growthPct}% total return`;
+  $('sumTotalInvested').textContent = fmt(totalContributed);
+  $('sumInvestedSub').textContent   = investedSub;
+  $('sumFinalValue').textContent    = fmt(finalValue);
+  $('sumFinalSub').textContent      = finalSub;
+  $('sumGrowth').textContent        = (totalGrowth >= 0 ? '+' : '') + fmt(totalGrowth);
+  $('sumGrowthSub').textContent     = growthSub;
+  $('kpiGrowth').className          = 'kpi ' + (totalGrowth >= 0 ? 'success' : 'danger');
+  $('sumAvgReturn').textContent     = pct(geoAvg, 2);
+  $('sumAvgSub').textContent        = avgSub;
 
   // ── SCENARIO NOTE ──
-  const noteEl = document.getElementById('scenarioNote');
+  let note = '';
   if (currentMode === 'historical') {
-    const startYear = parseInt(document.getElementById('histStartYear').value);
     const activeCount = ASSETS.filter(a => allocations[a.key] > 0).length;
     const endYear = startYear + horizon - 1;
-    const overrun = endYear > 2025;
-    const usesXlkProxy = allocations.xlk > 0 && startYear < 1999;
-
-    let note =
-      `<strong>Historical Scenario ${startYear}–${endYear}:</strong> ` +
-      `This projection applies actual blended portfolio returns from that period to your current inputs. ` +
-      `It is for illustrative purposes only and does not predict future performance. ` +
+    note =
+      `<strong>Historical replay ${startYear}–${endYear}:</strong> ` +
+      `This projection applies the actual blended returns of your mix over that period to today's amounts. ` +
+      `It is for illustration only and does not predict future performance. ` +
       `Returns are weighted across your ${activeCount} selected asset class${activeCount === 1 ? '' : 'es'}. ` +
-      `Underlying index returns are reported in each asset's native currency ` +
+      `Index returns are in each asset's native currency ` +
       `(USD for S&amp;P 500 / MSCI / XLK / bonds / gold / cash, GBP for FTSE 100, EUR for EURO STOXX 50) ` +
       `and are not adjusted for currency translation.`;
-    if (usesXlkProxy) {
-      note += ` <em>Note: XLK launched in Dec 1998; returns shown for years before 1999 are taken from the underlying S&amp;P 500 Information Technology sector index as a proxy.</em>`;
-    }
-    if (overrun) {
-      note += ` <em>Note: data extends to 2025; years beyond ${2025} use the 2025 return as a stand-in.</em>`;
-    }
-    document.getElementById('scenarioNoteText').innerHTML = note;
-    noteEl.style.display = 'flex';
+    if (allocations.xlk > 0 && startYear < 1999)
+      note += ` <em>XLK launched in Dec 1998; returns before 1999 use the S&amp;P 500 Information Technology sector index as a proxy.</em>`;
+    if (endYear > LAST_YEAR)
+      note += ` <em>Data runs to ${LAST_YEAR}; later years repeat the ${LAST_YEAR} return as a stand-in.</em>`;
+    $('scenarioNoteText').innerHTML = note;
+    $('scenarioNote').style.display = 'block';
   } else {
-    noteEl.style.display = 'none';
+    $('scenarioNote').style.display = 'none';
   }
 
   // ── GROWTH CHART ──
-  const labels = Array.from({length: horizon}, (_, i) => {
-    const yr = new Date().getFullYear() + i + 1;
-    return ageArr[i] ? `Year ${i+1} (Age ${ageArr[i]})` : `Year ${i+1}`;
+  const labels = rows.map(r => {
+    const base = r.marketYear ? `Year ${r.year} (${r.marketYear})` : `Year ${r.year}`;
+    return r.age ? `${base} · age ${r.age}` : base;
   });
+  const fontBase = { family: "'Public Sans', Arial, sans-serif", size: 11 };
 
   if (growthChartInstance) growthChartInstance.destroy();
-  growthChartInstance = new Chart(document.getElementById('growthChart'), {
+  growthChartInstance = new Chart($('growthChart'), {
     type: 'line',
     data: {
       labels,
       datasets: [
         {
-          label: 'Portfolio Value',
-          data: portfolioValues,
-          borderColor: '#033839',
-          backgroundColor: 'rgba(3,56,57,0.08)',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2.5,
-          pointRadius: horizon <= 15 ? 4 : 2,
-          pointBackgroundColor: '#033839',
+          label: 'Portfolio value', data: portfolioValues,
+          borderColor: C.navy, backgroundColor: 'rgba(10,49,97,0.10)', fill: true, tension: 0.3,
+          borderWidth: 2.5, pointRadius: horizon <= 15 ? 3.5 : 2, pointBackgroundColor: C.navy,
         },
         {
-          label: 'Total Contributions',
-          data: contributionsArr,
-          borderColor: '#1AB0C4',
-          backgroundColor: 'rgba(26,176,196,0.06)',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          borderDash: [5, 3],
-          pointRadius: 0,
+          label: 'Total paid in', data: contributionsArr,
+          borderColor: C.red, backgroundColor: 'rgba(179,25,66,0.05)', fill: true, tension: 0,
+          borderWidth: 2, borderDash: [6, 4], pointRadius: 0,
         }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, animation: { duration: hasRun && live ? 0 : 600 },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: {
-          labels: {
-            font: { family: 'Inter', size: 11 },
-            color: '#527C7E',
-            boxWidth: 14,
-            padding: 16,
-          }
-        },
+        legend: { labels: { font: fontBase, color: C.muted, boxWidth: 14, padding: 16 } },
         tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${fmtFull(ctx.raw)}`
-          }
+          titleFont: { ...fontBase, weight: '700' }, bodyFont: fontBase,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtFull(ctx.raw)}` }
         }
       },
       scales: {
-        x: {
-          ticks: { font: { family: 'Inter', size: 10 }, color: '#709394', maxTicksLimit: 10 },
-          grid: { color: 'rgba(215,229,227,0.5)' }
-        },
-        y: {
-          ticks: {
-            font: { family: 'Inter', size: 10 }, color: '#709394',
-            callback: v => fmt(v)
-          },
-          grid: { color: 'rgba(215,229,227,0.5)' }
-        }
+        x: { ticks: { font: { ...fontBase, size: 10 }, color: C.subtle, maxTicksLimit: 8,
+               callback: function (v) { return `Year ${v + 1}`; } },
+             grid: { color: 'rgba(221,227,236,0.6)' } },
+        y: { ticks: { font: { ...fontBase, size: 10 }, color: C.subtle, callback: v => fmt(v) },
+             grid: { color: 'rgba(221,227,236,0.6)' } }
       }
     }
   });
 
-  // ── PIE CHART ──
+  // ── MIX CHART ──
   const activeAssets = ASSETS.filter(a => allocations[a.key] > 0);
   if (pieChartInstance) pieChartInstance.destroy();
-  pieChartInstance = new Chart(document.getElementById('pieChart'), {
+  pieChartInstance = new Chart($('pieChart'), {
     type: 'doughnut',
     data: {
       labels: activeAssets.map(a => a.label),
-      datasets: [{
-        data: activeAssets.map(a => allocations[a.key]),
-        backgroundColor: activeAssets.map(a => a.color),
-        borderColor: 'white',
-        borderWidth: 2,
-        hoverBorderWidth: 3,
-      }]
+      datasets: [{ data: activeAssets.map(a => allocations[a.key]), backgroundColor: activeAssets.map(a => a.color),
+                   borderColor: '#FFFFFF', borderWidth: 2, hoverBorderWidth: 3 }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '62%',
+      responsive: true, maintainAspectRatio: false, cutout: '62%', animation: { duration: hasRun && live ? 0 : 600 },
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            font: { family: 'Inter', size: 10 },
-            color: '#527C7E',
-            boxWidth: 12,
-            padding: 10,
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label}: ${ctx.raw}%`
-          }
-        }
+        legend: { position: 'bottom', labels: { font: { ...fontBase, size: 10.5 }, color: C.muted, boxWidth: 12, padding: 10 } },
+        tooltip: { bodyFont: fontBase, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` } }
       }
     }
   });
 
   // ── DATA TABLE ──
-  // Uses the same start-of-year contribution convention as the main
-  // calculation above: in Year 1 the lump sum AND first regular
-  // contribution are both invested at the start of the year, then grown.
-  const tbody = document.getElementById('dataTableBody');
-  tbody.innerHTML = '';
-  let runningValue = initialInvest;
-  let runningContrib = initialInvest;
-
-  for (let i = 0; i < horizon; i++) {
-    const r = annualReturns[i];
-    const yr = new Date().getFullYear() + i + 1;
-    // Add the regular contribution at the start of every year (matching main calc).
-    // In Year 1 this stacks on top of the initial lump sum.
-    runningValue   += annualContrib;
-    runningContrib += annualContrib;
-
-    const contribThisYear = (i === 0 ? initialInvest : 0) + annualContrib;
-    const growthAmt = runningValue * (r / 100);
-    runningValue = runningValue * (1 + r / 100);
-
-    const isPos = r >= 0;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>Year ${i + 1} (${yr})</td>
-      <td>${ageArr[i] ? ageArr[i] : '—'}</td>
-      <td><span class="return-badge ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${r.toFixed(1)}%</span></td>
-      <td>${contribThisYear > 0 ? fmtFull(contribThisYear) : '—'}</td>
-      <td style="color:${isPos ? '#067F42' : '#DB3532'}">${isPos ? '+' : ''}${fmtFull(growthAmt)}</td>
-      <td><strong>${fmtFull(runningValue)}</strong></td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  // Final totals row
-  const trFinal = document.createElement('tr');
-  trFinal.innerHTML = `
-    <td colspan="4">FINAL VALUE after ${horizon} years</td>
-    <td>+${fmtFull(finalValue - totalContributed)}</td>
+  const hist = currentMode === 'historical';
+  $('dataTableHead').innerHTML =
+    `<th>Year</th>${hist ? '<th>Market year</th>' : ''}<th>Age</th><th>Return</th><th>Paid in</th><th>Growth</th><th>Value at year end</th>`;
+  $('dataTableBody').innerHTML = rows.map(r => {
+    const isPos = r.ret >= 0;
+    return `<tr>
+      <td>Year ${r.year} <span class="yr-sub">(${r.calYear})</span></td>
+      ${hist ? `<td>${r.marketYear}</td>` : ''}
+      <td>${r.age ? r.age : '—'}</td>
+      <td><span class="return-badge ${isPos ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
+      <td>${r.contrib > 0 ? fmtFull(r.contrib) : '—'}</td>
+      <td class="${r.growth >= 0 ? 'pos' : 'neg'}">${r.growth >= 0 ? '+' : ''}${fmtFull(r.growth)}</td>
+      <td><strong>${fmtFull(r.value)}</strong></td>
+    </tr>`;
+  }).join('');
+  $('dataTableFoot').innerHTML = `<tr>
+    <td colspan="${hist ? 4 : 3}">Final value after ${horizon} years</td>
+    <td>${fmtFull(totalContributed)}</td>
+    <td class="${totalGrowth >= 0 ? 'pos' : 'neg'}">${totalGrowth >= 0 ? '+' : ''}${fmtFull(totalGrowth)}</td>
     <td>${fmtFull(finalValue)}</td>
-  `;
-  tbody.appendChild(trFinal);
+  </tr>`;
+
+  lastResult = { clientName, subtitle, modeLabel, horizon, hist, rows, note,
+    totalContributed, investedSub, finalValue, finalSub, totalGrowth, growthSub, geoAvg, avgSub,
+    activeAssets: activeAssets.map(a => ({ ...a, w: allocations[a.key] })) };
+
+  if (!live && window.innerWidth <= 1000) $('rightPanel').scrollIntoView({ behavior: 'smooth' });
 }
 
 // ── PRINT / PDF EXPORT ─────────────────────────────────────────
 function printReport() {
-  // Capture charts as hi-res images BEFORE opening new window
-  const growthCanvas = document.getElementById('growthChart');
-  const pieCanvas    = document.getElementById('pieChart');
-  if (!growthCanvas || !growthCanvas.getContext) {
-    alert('Please generate a projection first before printing.');
-    return;
-  }
-  const growthImg = growthCanvas.toDataURL('image/png', 1.0);
-  const pieImg    = pieCanvas.toDataURL('image/png', 1.0);
+  if (!lastResult) { calculate(); if (!lastResult) return; }
+  const R = lastResult;
+  const growthImg = $('growthChart').toDataURL('image/png', 1.0);
+  const pieImg    = $('pieChart').toDataURL('image/png', 1.0);
+  const dateGenerated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const name = esc(R.clientName);
 
-  // Gather state
-  const clientName    = document.getElementById('resultClientName').textContent;
-  const subtitle      = document.getElementById('resultSubtitle').textContent;
-  const modeBadge     = document.getElementById('resultModeBadge').textContent;
-  const totalInvested = document.getElementById('sumTotalInvested').textContent;
-  const investedSub   = document.getElementById('sumInvestedSub').textContent;
-  const finalValue    = document.getElementById('sumFinalValue').textContent;
-  const finalSub      = document.getElementById('sumFinalSub').textContent;
-  const growth        = document.getElementById('sumGrowth').textContent;
-  const growthSub     = document.getElementById('sumGrowthSub').textContent;
-  const scenarioNote  = document.getElementById('scenarioNote').style.display !== 'none'
-                          ? document.getElementById('scenarioNoteText').innerHTML : '';
-  const dateGenerated = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  const allocRows = R.activeAssets.map(a => `<tr>
+      <td><span class="dot" style="background:${a.color}"></span>${a.label}</td>
+      <td class="c">${a.ticker}</td>
+      <td class="r strong">${a.w}%</td>
+    </tr>`).join('');
 
-  // Build allocation rows for the summary page
-  const activeAssets = ASSETS.filter(a => allocations[a.key] > 0);
-  const allocRows = activeAssets.map(a =>
-    `<tr>
-      <td style="display:flex;align-items:center;gap:8px;">
-        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${a.color};flex-shrink:0;"></span>
-        ${a.label}
-      </td>
-      <td style="text-align:center;">${a.ticker}</td>
-      <td style="text-align:right;font-weight:700;color:#033839;">${allocations[a.key]}%</td>
-    </tr>`
-  ).join('');
-
-  // Build year-by-year table rows from the DOM (already rendered)
-  const tableRows = Array.from(document.querySelectorAll('#dataTableBody tr')).map(tr => {
-    const cells = Array.from(tr.cells).map(td => td.innerHTML);
-    const isLast = tr === tr.closest('tbody').lastElementChild;
-    const bg = isLast ? 'background:#e8f4f0;font-weight:700;color:#033839;' : '';
-    return `<tr style="${bg}">${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
-  }).join('');
-
-  // SVG logo (inline — no external deps needed in print window)
-  const logoSVG = `<img src="data:image/png;base64,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" alt="Hoxton Wealth" style="height:30px;width:auto;display:block;" />`;
+  const yrHead = `<th class="l">Year</th>${R.hist ? '<th>Market year</th>' : ''}<th>Age</th><th>Return</th><th>Paid in</th><th>Growth</th><th>Value at year end</th>`;
+  const yrRows = R.rows.map(r => `<tr>
+      <td class="l">Year ${r.year} (${r.calYear})</td>
+      ${R.hist ? `<td>${r.marketYear}</td>` : ''}
+      <td>${r.age ? r.age : '—'}</td>
+      <td><span class="badge ${r.ret >= 0 ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
+      <td>${r.contrib > 0 ? fmtFull(r.contrib) : '—'}</td>
+      <td class="${r.growth >= 0 ? 'pos' : 'neg'}">${r.growth >= 0 ? '+' : ''}${fmtFull(r.growth)}</td>
+      <td class="strong">${fmtFull(r.value)}</td>
+    </tr>`).join('');
+  const yrFoot = `<tr><td class="l" colspan="${R.hist ? 4 : 3}">Final value after ${R.horizon} years</td>
+      <td>${fmtFull(R.totalContributed)}</td>
+      <td>${R.totalGrowth >= 0 ? '+' : ''}${fmtFull(R.totalGrowth)}</td>
+      <td>${fmtFull(R.finalValue)}</td></tr>`;
 
   const pageHeader = `
     <div class="page-header">
-      <div class="page-header-left">
-        ${logoSVG}
-        <div>
-          <div class="hdr-brand">Hoxton<span>Wealth</span></div>
-          <div class="hdr-tool">Investment Projection Tool</div>
-        </div>
-      </div>
-      <div class="page-header-right">
-        <div class="hdr-date">Generated: ${dateGenerated}</div>
-        <div class="hdr-client">${clientName}</div>
+      <div class="logo">${logoSVG('light')}</div>
+      <div class="hdr-right">
+        <div class="hdr-tool">Investment Projection</div>
+        <div class="hdr-client">${name}</div>
+        <div class="hdr-date">${dateGenerated}</div>
       </div>
     </div>`;
-
   const pageFooter = `
     <div class="page-footer">
-      <span>For Illustration Purposes Only</span>
-      <span>Hoxton Wealth · Created by William Gray</span>
+      <span>For illustration only · not a forecast</span>
+      <span>Investment Projection Tool — a tool by <strong>William Gray</strong> · © ${new Date().getFullYear()}</span>
     </div>`;
+  const noteBox = R.note ? `<div class="note-box">${R.note}</div>` : '';
 
-  // ── ASSEMBLE FULL PRINT DOCUMENT ──────────────────────────────
   const printHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Investment Projection — ${clientName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <style>
-    @page { size: A4 landscape; margin: 12mm 16mm; }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 10pt;
-      color: #022829;
-      background: white;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    /* ── PAGE SHELL ── */
-    .print-page {
-      width: 100%;
-      min-height: 176mm; /* A4 landscape inner height (210 - 2×12mm margin) */
-      display: flex;
-      flex-direction: column;
-      page-break-after: always;
-      break-after: page;
-    }
-    .print-page:last-child {
-      page-break-after: auto;
-      break-after: auto;
-    }
-
-    /* ── HEADER ── */
-    .page-header {
-      background: #033839;
-      color: white;
-      padding: 8px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 6px 6px 0 0;
-      margin-bottom: 10px;
-      flex-shrink: 0;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .page-header-left { display: flex; align-items: center; gap: 10px; }
-    .hdr-brand { font-family: 'Playfair Display', Georgia, serif; font-size: 13pt; font-weight: 700; }
-    .hdr-brand span { font-weight: 400; }
-    .hdr-tool { font-size: 7pt; color: #B8F4EF; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
-    .page-header-right { text-align: right; }
-    .hdr-date { font-size: 7.5pt; color: #B8F4EF; }
-    .hdr-client { font-size: 9pt; font-weight: 600; color: white; margin-top: 1px; }
-
-    /* ── FOOTER ── */
-    .page-footer {
-      background: #033839;
-      color: #B8F4EF;
-      padding: 5px 14px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 7pt;
-      border-radius: 0 0 6px 6px;
-      margin-top: auto;
-      flex-shrink: 0;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    /* ── PAGE BODY ── */
-    .page-body { flex: 1; padding: 0 2px; display: flex; flex-direction: column; gap: 8px; }
-
-    /* ── PAGE 1: CLIENT OVERVIEW ── */
-    .client-hero {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #D7E5E3;
-      margin-bottom: 8px;
-    }
-    .client-name {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 22pt;
-      font-weight: 700;
-      color: #033839;
-      line-height: 1.1;
-    }
-    .client-meta {
-      font-size: 9pt;
-      color: #527C7E;
-      margin-top: 3px;
-    }
-    .mode-chip {
-      background: #D7E5E3;
-      color: #033839;
-      font-size: 8pt;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 20px;
-      border: 1px solid #B7CCCA;
-    }
-
-    .detail-strip {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .detail-item {
-      background: #F5F7F7;
-      border: 1px solid #D7E5E3;
-      border-radius: 6px;
-      padding: 7px 10px;
-      text-align: center;
-    }
-    .detail-label {
-      font-size: 6.5pt;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #709394;
-      margin-bottom: 2px;
-    }
-    .detail-value {
-      font-size: 11pt;
-      font-weight: 700;
-      color: #033839;
-      font-family: 'Playfair Display', Georgia, serif;
-    }
-
-    .summary-strip {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr 1fr;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .sum-card {
-      border: 1px solid #D7E5E3;
-      border-radius: 8px;
-      padding: 10px 14px;
-      text-align: center;
-    }
-    .sum-card.featured {
-      background: #033839;
-      border-color: #033839;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .sum-label {
-      font-size: 6.5pt;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #709394;
-      margin-bottom: 3px;
-    }
-    .sum-card.featured .sum-label { color: #B8F4EF; }
-    .sum-value {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 18pt;
-      font-weight: 700;
-      color: #033839;
-      line-height: 1.1;
-    }
-    .sum-card.featured .sum-value { color: white; }
-    .sum-sub { font-size: 7.5pt; color: #709394; margin-top: 2px; }
-    .sum-card.featured .sum-sub { color: #D7E5E3; }
-
-    /* ── ALLOCATION TABLE ON PAGE 1 ── */
-    .alloc-section-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 9.5pt;
-      font-weight: 600;
-      color: #033839;
-      margin-bottom: 5px;
-      padding-bottom: 4px;
-      border-bottom: 1.5px solid #D7E5E3;
-    }
-    .alloc-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0 20px;
-    }
-    .alloc-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-    .alloc-table td { padding: 4px 6px; border-bottom: 1px solid #F5F7F7; vertical-align: middle; }
-    .alloc-table td:last-child { text-align: right; font-weight: 700; color: #033839; }
-    .alloc-table tr:last-child td { border-bottom: none; }
-
-    /* ── PAGE 2: CHARTS ── */
-    .charts-row {
-      display: grid;
-      grid-template-columns: 3fr 2fr;
-      gap: 12px;
-      flex: 1;
-    }
-    .chart-box {
-      border: 1px solid #D7E5E3;
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-    }
-    .chart-box-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 10pt;
-      font-weight: 600;
-      color: #033839;
-      margin-bottom: 6px;
-      padding-bottom: 5px;
-      border-bottom: 1.5px solid #D7E5E3;
-    }
-    .chart-box img { width: 100%; object-fit: contain; flex: 1; }
-
-    .scenario-box {
-      background: linear-gradient(135deg, #D7E5E3, #B8F4EF);
-      border: 1px solid #709394;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 8pt;
-      color: #022829;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    /* ── PAGE 3+: TABLE ── */
-    .table-page-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 12pt;
-      font-weight: 600;
-      color: #033839;
-      margin-bottom: 8px;
-      padding-bottom: 5px;
-      border-bottom: 2px solid #D7E5E3;
-    }
-    .yr-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-    .yr-table thead th {
-      background: #033839;
-      color: white;
-      padding: 7px 8px;
-      text-align: right;
-      font-size: 7.5pt;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .yr-table thead th:first-child { text-align: left; }
-    .yr-table tbody td { padding: 5px 8px; text-align: right; border-bottom: 1px solid #D7E5E3; }
-    .yr-table tbody td:first-child { text-align: left; font-weight: 600; color: #527C7E; }
-    .yr-table tbody tr:nth-child(even) { background: #F5F7F7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .yr-table .badge { font-size: 7.5pt; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-    .yr-table .badge.pos { background: #d4f5e5; color: #067F42; }
-    .yr-table .badge.neg { background: #fde8e8; color: #DB3532; }
-    .yr-table tfoot tr td {
-      font-weight: 700;
-      color: #033839;
-      background: #e8f4f0;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      padding: 7px 8px;
-    }
-
-    .disclaimer-box {
-      border: 1px solid #D7E5E3;
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 7pt;
-      color: #709394;
-      line-height: 1.6;
-      margin-top: 8px;
-    }
-    .disclaimer-box strong { color: #033839; }
-  </style>
+<meta charset="UTF-8"/>
+<title>Investment Projection — ${name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet"/>
+<style>
+  @page { size: A4 landscape; margin: 12mm 14mm; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Public Sans', Arial, sans-serif; font-size: 9.5pt; color: #1F2A3A; background: #fff;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-page { width: 100%; min-height: 182mm; display: flex; flex-direction: column; break-after: page; page-break-after: always; }
+  .print-page:last-child { break-after: auto; page-break-after: auto; }
+  .page-header { background: #0A3161; color: #fff; border-top: 3px solid #B31942; padding: 9px 14px;
+                 display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .page-header .logo svg { height: 34px; width: auto; display: block; }
+  .hdr-right { text-align: right; }
+  .hdr-tool { font-size: 6.8pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+  .hdr-client { font-family: 'Source Serif 4', Georgia, serif; font-size: 11pt; font-weight: 600; }
+  .hdr-date { font-size: 7pt; opacity: .8; }
+  .page-footer { margin-top: auto; border-top: 1px solid #DDE3EC; padding-top: 6px; display: flex; justify-content: space-between;
+                 font-size: 7pt; color: #718096; }
+  .page-footer strong { color: #0B1A2E; }
+  .page-body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-bottom: 10px; }
+  h1, h2 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; color: #0B1A2E; }
+  .client-hero { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 8px; border-bottom: 2px solid #DDE3EC; }
+  .client-hero h1 { font-size: 22pt; line-height: 1.1; }
+  .client-meta { font-size: 9pt; color: #4A5568; margin-top: 3px; }
+  .chip { background: #E7EDF5; color: #0A3161; font-size: 8pt; font-weight: 700; padding: 4px 12px; border-radius: 999px; border: 1px solid #C3CCD9; }
+  .kpis { display: grid; grid-template-columns: 1fr 1.25fr 1fr 1fr; gap: 8px; }
+  .kpi { border: 1px solid #DDE3EC; border-top: 3px solid #0A3161; border-radius: 4px; padding: 9px 12px; }
+  .kpi.featured { background: #0A3161; border-color: #0A3161; border-top-color: #B31942; color: #fff; }
+  .kpi-label { font-size: 6.5pt; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #4A5568; margin-bottom: 3px; }
+  .kpi.featured .kpi-label { color: rgba(255,255,255,.8); }
+  .kpi-value { font-family: 'Source Serif 4', Georgia, serif; font-size: 17pt; font-weight: 600; color: #0B1A2E; line-height: 1.1; }
+  .kpi.featured .kpi-value { color: #fff; }
+  .kpi-value.pos { color: #1E6B43; } .kpi-value.neg { color: #B31942; }
+  .kpi-sub { font-size: 7.3pt; color: #718096; margin-top: 3px; }
+  .kpi.featured .kpi-sub { color: rgba(255,255,255,.75); }
+  h2 { font-size: 11pt; padding-bottom: 4px; border-bottom: 1px solid #DDE3EC; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  .alloc td { padding: 4px 6px; border-bottom: 1px solid #F0F3F8; font-size: 8.5pt; }
+  .alloc th { text-align: left; padding: 5px 6px; font-size: 7pt; letter-spacing: .05em; text-transform: uppercase; color: #4A5568; border-bottom: 1px solid #DDE3EC; }
+  .alloc th.c, .alloc td.c { text-align: center; } .alloc th.r, .alloc td.r { text-align: right; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+  .strong { font-weight: 700; color: #0B1A2E; }
+  .note-box { background: #F4F6FA; border-left: 3px solid #0A3161; padding: 8px 12px; font-size: 7.8pt; line-height: 1.55; }
+  .note-box strong { color: #0B1A2E; }
+  .charts-row { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; flex: 1; }
+  .chart-box { border: 1px solid #DDE3EC; border-top: 3px solid #B31942; border-radius: 4px; padding: 10px 12px; display: flex; flex-direction: column; }
+  .chart-box img { width: 100%; object-fit: contain; }
+  .yr th { background: #0A3161; color: #fff; padding: 6px 8px; text-align: right; font-size: 7.3pt; font-weight: 700; }
+  .yr td { padding: 4px 8px; text-align: right; border-bottom: 1px solid #DDE3EC; font-size: 8.2pt; font-variant-numeric: tabular-nums; }
+  .yr th.l, .yr td.l { text-align: left; }
+  .yr tbody td.l { font-weight: 600; color: #0B1A2E; }
+  .yr tbody tr:nth-child(even) { background: #FAFBFD; }
+  .yr tfoot td { background: #F4F6FA; border-top: 2px solid #0A3161; font-weight: 700; color: #0B1A2E; padding: 6px 8px; }
+  .badge { font-size: 7.3pt; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+  .badge.pos { background: #E6F2EB; color: #1E6B43; } .badge.neg { background: #FBE6EC; color: #B31942; }
+  td.pos { color: #1E6B43; } td.neg { color: #B31942; }
+  .disclaimer { background: #0B1A2E; color: rgba(255,255,255,.75); border-left: 3px solid #B31942; padding: 8px 12px; font-size: 6.8pt; line-height: 1.55; }
+  .disclaimer strong { color: #fff; }
+</style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-     PAGE 1 — CLIENT OVERVIEW & SUMMARY
-══════════════════════════════════════════ -->
 <div class="print-page">
   ${pageHeader}
   <div class="page-body">
-
     <div class="client-hero">
-      <div>
-        <div class="client-name">${clientName}</div>
-        <div class="client-meta">${subtitle}</div>
-      </div>
-      <div class="mode-chip">${modeBadge}</div>
+      <div><h1>${name}</h1><div class="client-meta">${esc(R.subtitle)}</div></div>
+      <div class="chip">${esc(R.modeLabel)}</div>
     </div>
-
-    <div class="detail-strip">
-      <div class="detail-item">
-        <div class="detail-label">Initial Investment</div>
-        <div class="detail-value">${totalInvested}</div>
-        <div class="sum-sub">${investedSub}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Projected Final Value</div>
-        <div class="detail-value" style="color:#033839;font-size:13pt;">${finalValue}</div>
-        <div class="sum-sub">${finalSub}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Total Growth</div>
-        <div class="detail-value" style="color:#18B566;">${growth}</div>
-        <div class="sum-sub">${growthSub}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Horizon</div>
-        <div class="detail-value">${subtitle.split('·')[1] ? subtitle.split('·')[1].trim() : '—'}</div>
-        <div class="sum-sub">Investment period</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Projection Mode</div>
-        <div class="detail-value" style="font-size:9pt;">${modeBadge.split('@')[0].trim()}</div>
-        <div class="sum-sub">${modeBadge.includes('@') ? modeBadge.split('@')[1].trim() : ''}</div>
-      </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Total paid in</div><div class="kpi-value">${fmt(R.totalContributed)}</div><div class="kpi-sub">${R.investedSub}</div></div>
+      <div class="kpi featured"><div class="kpi-label">Projected value</div><div class="kpi-value">${fmt(R.finalValue)}</div><div class="kpi-sub">${R.finalSub}</div></div>
+      <div class="kpi"><div class="kpi-label">Investment growth</div><div class="kpi-value ${R.totalGrowth >= 0 ? 'pos' : 'neg'}">${R.totalGrowth >= 0 ? '+' : ''}${fmt(R.totalGrowth)}</div><div class="kpi-sub">${R.growthSub}</div></div>
+      <div class="kpi"><div class="kpi-label">Average yearly return</div><div class="kpi-value">${pct(R.geoAvg, 2)}</div><div class="kpi-sub">${R.avgSub}</div></div>
     </div>
-
-    <div class="alloc-section-title">Portfolio Asset Allocation</div>
-    <table class="alloc-table">
-      <thead><tr style="background:#D7E5E3;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><th style="text-align:left;padding:5px 6px;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.05em;">Asset</th><th style="text-align:center;padding:5px 6px;font-size:7.5pt;">Type</th><th style="text-align:right;padding:5px 6px;font-size:7.5pt;">Allocation</th></tr></thead>
-      <tbody>${allocRows}</tbody>
-    </table>
-
-    ${scenarioNote ? `<div class="scenario-box" style="margin-top:6px;">ℹ️ ${scenarioNote}</div>` : ''}
-
+    <div>
+      <h2>Portfolio mix</h2>
+      <table class="alloc">
+        <thead><tr><th>Asset</th><th class="c">Category</th><th class="r">Weight</th></tr></thead>
+        <tbody>${allocRows}</tbody>
+      </table>
+    </div>
+    ${noteBox}
   </div>
   ${pageFooter}
 </div>
 
-<!-- ══════════════════════════════════════════
-     PAGE 2 — PORTFOLIO CHARTS
-══════════════════════════════════════════ -->
 <div class="print-page">
   ${pageHeader}
   <div class="page-body">
-
     <div class="charts-row">
-      <div class="chart-box">
-        <div class="chart-box-title">Portfolio Growth Over Time</div>
-        <img src="${growthImg}" alt="Portfolio Growth Chart" />
-      </div>
-      <div class="chart-box">
-        <div class="chart-box-title">Asset Allocation</div>
-        <img src="${pieImg}" alt="Asset Allocation Chart" style="max-height:220px;"/>
-        <table class="alloc-table" style="margin-top:8px;font-size:8pt;">
-          <tbody>${allocRows}</tbody>
-        </table>
+      <div class="chart-box"><h2>Portfolio value over time</h2><img src="${growthImg}" alt="Portfolio value chart"/></div>
+      <div class="chart-box"><h2>Portfolio mix</h2><img src="${pieImg}" alt="Portfolio mix chart" style="max-height:210px;"/>
+        <table class="alloc" style="margin-top:8px;"><tbody>${allocRows}</tbody></table>
       </div>
     </div>
-
-    ${scenarioNote ? `<div class="scenario-box">ℹ️ ${scenarioNote}</div>` : ''}
-
+    ${noteBox}
   </div>
   ${pageFooter}
 </div>
 
-<!-- ══════════════════════════════════════════
-     PAGE 3 — YEAR-BY-YEAR BREAKDOWN
-══════════════════════════════════════════ -->
 <div class="print-page">
   ${pageHeader}
   <div class="page-body">
-
-    <div class="table-page-title">Year-by-Year Breakdown — ${clientName}</div>
-
-    <table class="yr-table">
-      <thead>
-        <tr>
-          <th style="text-align:left;">Year</th>
-          <th>Age</th>
-          <th>Annual Return</th>
-          <th>Contributions</th>
-          <th>Growth</th>
-          <th>Portfolio Value</th>
-        </tr>
-      </thead>
-      <tbody>${tableRows}</tbody>
-    </table>
-
-    <div class="disclaimer-box">
-      <strong>Important Disclaimer:</strong> This report is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical return data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning purposes only. All figures are shown in USD and do not account for taxes, adviser fees, inflation, or currency fluctuations. Hoxton Wealth and its advisers accept no liability for investment decisions made based on this report. Always seek independent regulated financial advice before making investment decisions. <strong>Created by William Gray · Hoxton Wealth · ${dateGenerated}</strong>
+    <h2>Year-by-year breakdown</h2>
+    <table class="yr"><thead><tr>${yrHead}</tr></thead><tbody>${yrRows}</tbody><tfoot>${yrFoot}</tfoot></table>
+    <div class="disclaimer">
+      <strong>Important:</strong> This report is for illustrative and educational purposes only and does not constitute financial advice, a solicitation, or a recommendation to buy or sell any investment. Projections are hypothetical and based on assumed rates of return or historical data; past performance is not a reliable indicator of future results. The value of investments can go down as well as up, and you may receive back less than you invest. Historical return data used in this tool is approximate and sourced from publicly available information; it is provided for scenario planning purposes only. All figures are shown in USD and do not account for taxes, adviser fees, inflation, or currency fluctuations. William Gray accepts no liability for investment decisions made based on this report. Always seek independent regulated financial advice before making investment decisions.
     </div>
-
   </div>
   ${pageFooter}
 </div>
 
 <script>
-  window.onload = function() {
-    // Brief delay to ensure fonts have loaded before print dialog opens
-    setTimeout(function() { window.print(); }, 800);
-  };
+  window.onload = function () { setTimeout(function () { window.print(); }, 800); };
 <\/script>
 </body>
 </html>`;
 
   const printWin = window.open('', '_blank', 'width=1200,height=850');
-  if (!printWin) {
-    alert('Pop-up blocked. Please allow pop-ups for this page and try again.');
-    return;
-  }
+  if (!printWin) { alert('Pop-up blocked. Please allow pop-ups for this page and try again.'); return; }
   printWin.document.write(printHTML);
   printWin.document.close();
 }
 
-// ── TABLE TOGGLE ───────────────────────────────────────────────
-function toggleTable() {
-  const wrap = document.getElementById('dataTableWrap');
-  const icon = document.getElementById('toggleIcon');
-  const isOpen = wrap.style.display !== 'none';
-  wrap.style.display = isOpen ? 'none' : 'block';
-  icon.classList.toggle('open', !isOpen);
-}
-
 // ── INIT ───────────────────────────────────────────────────────
+$('brandLogo').innerHTML = logoSVG('dark');
+$('yearNow').textContent = new Date().getFullYear();
+$('brandLogo').addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 buildAllocationRows();
 populateYearDropdown();
-document.getElementById('horizonYears').addEventListener('input', updateHistYearsInfo);
+['clientName', 'clientAge', 'horizonYears', 'initialInvestment', 'regularContrib', 'estimatedReturn'].forEach(id =>
+  $(id).addEventListener('input', () => { if (id === 'horizonYears') updateHistYearsInfo(); onInputChanged(); }));
+// Money fields: show thousands separators once the user leaves the box
+document.querySelectorAll('[data-money]').forEach(el => {
+  el.addEventListener('blur', () => { const v = num(el.id); el.value = isNaN(v) ? '' : v.toLocaleString('en-US', { maximumFractionDigits: 2 }); });
+  el.addEventListener('focus', () => { el.value = el.value.replace(/,/g, ''); });
+});
+refreshChecklist();
 </script>
 </body>
 </html>
