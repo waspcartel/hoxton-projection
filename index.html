@@ -139,7 +139,17 @@
   .affix.post span { right: 11px; }
   .affix.post input { padding-right: 30px; }
   .affix.post.years input { padding-right: 56px; }
-  #contribYearsGroup.inactive { opacity: .55; }
+  .saving-opt.inactive { opacity: .55; }
+  .extras .hint { margin-bottom: 4px; }
+  .extra-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 36px; gap: 8px; align-items: center; }
+  .extra-row + .extra-row { margin-top: 8px; }
+  .extra-row .affix.pre.yr input { padding-left: 46px; }
+  .extra-row .affix.pre.yr span { font-size: 0.82rem; }
+  .btn-remove { height: 38px; border: 1px solid var(--field); background: var(--white); color: var(--muted); border-radius: var(--radius); cursor: pointer; font-size: 1.1rem; line-height: 1; }
+  .btn-remove:hover { color: var(--danger); border-color: var(--danger); }
+  .btn-add { align-self: flex-start; margin-top: 4px; background: none; border: 1px dashed var(--field); color: var(--navy); font-family: var(--font-body); font-weight: 700; font-size: 0.84rem; padding: 7px 12px; border-radius: var(--radius); cursor: pointer; }
+  .btn-add:hover { border-color: var(--navy); background: var(--navy-tint); }
+  .extra-tag { font-size: 0.7rem; font-weight: 700; color: var(--navy); background: var(--navy-tint); padding: 1px 6px; border-radius: 3px; margin-left: 6px; text-transform: uppercase; letter-spacing: .04em; }
 
   .seg { display: flex; border: 1px solid var(--field); border-radius: var(--radius); overflow: hidden; }
   .seg button {
@@ -392,10 +402,21 @@
           </div>
           <span class="hint">Savings are added at the start of each year, before that year's growth.</span>
         </div>
-        <div class="form-group full" id="contribYearsGroup">
+        <div class="form-group saving-opt">
           <label for="contribYears">Keep saving for <span class="opt">(optional)</span></label>
           <div class="affix post years"><input type="number" id="contribYears" min="1" max="30" placeholder="Every year" inputmode="numeric"><span>years</span></div>
-          <span class="hint">Leave blank to save every year. After saving stops, the money stays invested and keeps growing.</span>
+          <span class="hint">Blank = every year. Afterwards the money keeps growing.</span>
+        </div>
+        <div class="form-group saving-opt">
+          <label for="contribRise">Yearly increase <span class="opt">(optional)</span></label>
+          <div class="affix post"><input type="number" id="contribRise" min="0" max="25" step="0.5" placeholder="0" inputmode="decimal"><span>%</span></div>
+          <span class="hint">Raises the saving each year, e.g. 3% to match pay rises</span>
+        </div>
+        <div class="form-group full extras">
+          <span class="label">Extra lump sums <span class="opt">(optional)</span></span>
+          <span class="hint">One-off amounts added at the start of a chosen year, e.g. a bonus or an inheritance.</span>
+          <div id="extraList"></div>
+          <button type="button" class="btn-add" onclick="addExtraRow()">+ Add a lump sum</button>
         </div>
       </div>
     </div>
@@ -786,6 +807,25 @@ function updateHistYearsInfo() {
   }
 }
 
+// ── EXTRA LUMP SUMS ────────────────────────────────────────────
+function addExtraRow(year = '', amount = '') {
+  const row = document.createElement('div');
+  row.className = 'extra-row';
+  row.innerHTML = `
+    <div class="affix pre yr"><span>Year</span><input type="number" class="extra-year" min="1" max="30" placeholder="5" inputmode="numeric" aria-label="Year of the extra lump sum" value="${year}"></div>
+    <div class="affix pre"><span>$</span><input type="text" class="extra-amt" placeholder="25,000" inputmode="decimal" aria-label="Extra lump sum amount" data-money value="${amount}"></div>
+    <button type="button" class="btn-remove" aria-label="Remove this lump sum" onclick="this.parentElement.remove(); onInputChanged();">×</button>`;
+  $('extraList').appendChild(row);
+  if (year === '') row.querySelector('.extra-year').focus();
+}
+function readExtras() {
+  return [...document.querySelectorAll('#extraList .extra-row')].map(row => {
+    const yRaw = row.querySelector('.extra-year').value.trim();
+    const aRaw = row.querySelector('.extra-amt').value.replace(/[^0-9.\-]/g, '');
+    return { row, year: yRaw === '' ? NaN : parseInt(yRaw), amount: parseFloat(aRaw), blank: yRaw === '' && aRaw === '' };
+  }).filter(e => !e.blank);
+}
+
 // ── VALIDATION ─────────────────────────────────────────────────
 function readInputs() {
   const horizon = parseInt($('horizonYears').value);
@@ -793,11 +833,14 @@ function readInputs() {
   const regularContrib = num('regularContrib');
   const cyRaw = $('contribYears').value.trim();
   const contribYearsIn = cyRaw === '' ? NaN : parseInt(cyRaw);
+  const riseRaw = $('contribRise').value.trim();
+  const rise = riseRaw === '' ? 0 : parseFloat(riseRaw);
+  const extras = readExtras();
   const r = parseFloat($('estimatedReturn').value);
   const total = Object.values(allocations).reduce((a, b) => a + b, 0);
   const checks = {
     horizon: horizon >= 1 && horizon <= 30,
-    money: (initialInvest > 0) || (regularContrib > 0),
+    money: (initialInvest > 0) || (regularContrib > 0) || extras.some(e => e.amount > 0),
     alloc: total === 100,
     mode: currentMode === 'historical' || !isNaN(r),
   };
@@ -807,13 +850,20 @@ function readInputs() {
   const errors = [];
   if (!checks.horizon) errors.push('Enter between 1 and 30 years to invest.');
   if (!checks.money)   errors.push('Enter a lump sum, a regular saving, or both.');
+  if (regularContrib > 0 && (isNaN(rise) || rise < 0 || rise > 25)) errors.push('"Yearly increase" needs to be between 0% and 25%, or blank.');
+  const badExtras = extras.filter(e => !(e.year >= 1) || (horizon >= 1 && e.year > horizon) || !(e.amount > 0));
+  extras.forEach(e => e.row.classList.toggle('bad', badExtras.includes(e)));
+  document.querySelectorAll('#extraList .extra-row').forEach(row => row.querySelectorAll('input').forEach(i => i.classList.toggle('invalid', row.classList.contains('bad'))));
+  if (badExtras.length) errors.push(`Each extra lump sum needs an amount and a year between 1 and ${horizon >= 1 ? horizon : 'the years invested'}.`);
   if (!checks.alloc)   errors.push(total > 100 ? `The portfolio mix adds up to ${total}%; bring it down to 100%.` : `The portfolio mix adds up to ${total}%; it needs to reach 100%.`);
   if (!checks.mode)    errors.push('Enter an assumed yearly return.');
   if (!contribYearsOk) errors.push(contribYearsIn > horizon
     ? `"Keep saving for" is ${contribYearsIn} years, longer than the ${horizon} years invested. Shorten it or leave it blank.`
     : '"Keep saving for" needs to be at least 1 year, or blank to save every year.');
   const contribYears = (cyRaw === '' || isNaN(contribYearsIn)) ? horizon : Math.min(contribYearsIn, horizon);
-  return { checks, errors, horizon, contribYears, initialInvest: initialInvest > 0 ? initialInvest : 0, regularContrib: regularContrib > 0 ? regularContrib : 0, r };
+  const extraByYear = {};
+  extras.filter(e => !badExtras.includes(e)).forEach(e => { extraByYear[e.year] = (extraByYear[e.year] || 0) + e.amount; });
+  return { checks, errors, horizon, contribYears, rise: isNaN(rise) ? 0 : rise, extraByYear, initialInvest: initialInvest > 0 ? initialInvest : 0, regularContrib: regularContrib > 0 ? regularContrib : 0, r };
 }
 
 function refreshChecklist() {
@@ -821,7 +871,7 @@ function refreshChecklist() {
   document.querySelectorAll('#checklist li').forEach(li => li.classList.toggle('ok', !!checks[li.dataset.check]));
   $('step1').classList.toggle('done', checks.horizon && checks.money);
   $('step3').classList.toggle('done', checks.mode);
-  $('contribYearsGroup').classList.toggle('inactive', !(num('regularContrib') > 0));
+  document.querySelectorAll('.saving-opt').forEach(g => g.classList.toggle('inactive', !(num('regularContrib') > 0)));
   $('horizonYears').classList.toggle('invalid', $('horizonYears').value !== '' && !checks.horizon);
 }
 
@@ -856,6 +906,10 @@ function calculate(live = false) {
   const annualContrib  = frequency === 'monthly' ? regularContrib * 12 : regularContrib;
   const contribYears   = annualContrib > 0 ? inp.contribYears : horizon;
   const stopsEarly     = annualContrib > 0 && contribYears < horizon;
+  const rise           = annualContrib > 0 ? inp.rise : 0;          // % increase in the regular saving each year
+  const extraByYear    = inp.extraByYear;                            // { year (1-based): amount }
+  const extraCount     = Object.keys(extraByYear).length;
+  const extraTotal     = Object.values(extraByYear).reduce((a, b) => a + b, 0);
 
   // Build annual returns array
   let annualReturns = [];
@@ -885,9 +939,10 @@ function calculate(live = false) {
   let totalContributed = initialInvest;
   for (let i = 0; i < horizon; i++) {
     const r = annualReturns[i] / 100;
-    const payIn = i < contribYears ? annualContrib : 0;   // saving stops after contribYears
-    value += payIn;
-    totalContributed += payIn;
+    const payIn = i < contribYears ? annualContrib * Math.pow(1 + rise / 100, i) : 0;   // rises yearly; stops after contribYears
+    const extra = extraByYear[i + 1] || 0;
+    value += payIn + extra;
+    totalContributed += payIn + extra;
     const growthAmt = value * r;
     value = value * (1 + r);
     portfolioValues.push(Math.round(value));
@@ -899,7 +954,8 @@ function calculate(live = false) {
       marketYear: marketYears[i] || null,
       age: ageArr[i],
       ret: annualReturns[i],
-      contrib: (i === 0 ? initialInvest : 0) + payIn,
+      contrib: (i === 0 ? initialInvest : 0) + payIn + extra,
+      extra,
       stopRow: stopsEarly && i === contribYears,
       growth: growthAmt,
       value,
@@ -926,7 +982,8 @@ function calculate(live = false) {
   $('resultModeBadge').textContent  = modeLabel;
 
   const investedSub = (initialInvest > 0 ? `${fmtFull(initialInvest)} lump sum` : 'No lump sum') +
-    (annualContrib > 0 ? ` + ${fmt(annualContrib)} a year` + (stopsEarly ? ` for ${contribYears} year${contribYears === 1 ? '' : 's'}` : '') : '');
+    (annualContrib > 0 ? ` + ${fmt(annualContrib)} a year` + (rise > 0 ? ` rising ${rise}% yearly` : '') + (stopsEarly ? ` for ${contribYears} year${contribYears === 1 ? '' : 's'}` : '') : '') +
+    (extraCount ? ` + ${fmt(extraTotal)} in ${extraCount} extra lump sum${extraCount === 1 ? '' : 's'}` : '');
   const finalSub = clientAge ? `At age ${clientAge + horizon}, after ${horizon} years` : `After ${horizon} years`;
   const growthSub = `${pct(growthPct)} on what was paid in`;
   const avgSub = currentMode === 'historical'
@@ -1058,7 +1115,7 @@ function calculate(live = false) {
   $('dataTableBody').innerHTML = rows.map(r => {
     const isPos = r.ret >= 0;
     return `<tr${r.stopRow ? ' class="stop-row"' : ''}>
-      <td>Year ${r.year} <span class="yr-sub">(${r.calYear})</span>${r.stopRow ? '<span class="stop-tag">Saving stopped</span>' : ''}</td>
+      <td>Year ${r.year} <span class="yr-sub">(${r.calYear})</span>${r.stopRow ? '<span class="stop-tag">Saving stopped</span>' : ''}${r.extra ? `<span class="extra-tag">+ ${fmt(r.extra)} lump sum</span>` : ''}</td>
       ${hist ? `<td>${r.marketYear}</td>` : ''}
       <td>${r.age ? r.age : '—'}</td>
       <td><span class="return-badge ${isPos ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
@@ -1098,7 +1155,7 @@ function printReport() {
 
   const yrHead = `<th class="l">Year</th>${R.hist ? '<th>Market year</th>' : ''}<th>Age</th><th>Return</th><th>Paid in</th><th>Growth</th><th>Value at year end</th>`;
   const yrRows = R.rows.map(r => `<tr${r.stopRow ? ' class="stop"' : ''}>
-      <td class="l">Year ${r.year} (${r.calYear})${r.stopRow ? ' <span class="stop-tag">Saving stopped</span>' : ''}</td>
+      <td class="l">Year ${r.year} (${r.calYear})${r.stopRow ? ' <span class="stop-tag">Saving stopped</span>' : ''}${r.extra ? ` <span class="extra-tag">+ ${fmt(r.extra)} lump sum</span>` : ''}</td>
       ${R.hist ? `<td>${r.marketYear}</td>` : ''}
       <td>${r.age ? r.age : '—'}</td>
       <td><span class="badge ${r.ret >= 0 ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
@@ -1186,6 +1243,7 @@ function printReport() {
   .yr tfoot td { background: #F4F6FA; border-top: 2px solid #0A3161; font-weight: 700; color: #0B1A2E; padding: 6px 8px; }
   .yr tr.stop td { border-top: 1.5px dashed #B31942; }
   .stop-tag { font-size: 6.5pt; font-weight: 700; color: #B31942; text-transform: uppercase; letter-spacing: .04em; }
+  .extra-tag { font-size: 6.5pt; font-weight: 700; color: #0A3161; background: #E7EDF5; padding: 0 4px; border-radius: 2px; text-transform: uppercase; letter-spacing: .04em; }
   .badge { font-size: 7.3pt; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
   .badge.pos { background: #E6F2EB; color: #1E6B43; } .badge.neg { background: #FBE6EC; color: #B31942; }
   td.pos { color: #1E6B43; } td.neg { color: #B31942; }
@@ -1264,13 +1322,17 @@ $('yearNow').textContent = new Date().getFullYear();
 $('brandLogo').addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 buildAllocationRows();
 populateYearDropdown();
-['clientName', 'clientAge', 'horizonYears', 'initialInvestment', 'regularContrib', 'contribYears', 'estimatedReturn'].forEach(id =>
+['clientName', 'clientAge', 'horizonYears', 'initialInvestment', 'regularContrib', 'contribYears', 'contribRise', 'estimatedReturn'].forEach(id =>
   $(id).addEventListener('input', () => { if (id === 'horizonYears') updateHistYearsInfo(); onInputChanged(); }));
 // Money fields: show thousands separators once the user leaves the box
-document.querySelectorAll('[data-money]').forEach(el => {
-  el.addEventListener('blur', () => { const v = num(el.id); el.value = isNaN(v) ? '' : v.toLocaleString('en-US', { maximumFractionDigits: 2 }); });
-  el.addEventListener('focus', () => { el.value = el.value.replace(/,/g, ''); });
+document.addEventListener('focusout', e => {
+  const el = e.target;
+  if (!el.matches || !el.matches('[data-money]')) return;
+  const v = parseFloat(el.value.replace(/[^0-9.\-]/g, ''));
+  el.value = isNaN(v) ? '' : v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 });
+document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('[data-money]')) e.target.value = e.target.value.replace(/,/g, ''); });
+$('extraList').addEventListener('input', onInputChanged);
 refreshChecklist();
 </script>
 </body>
