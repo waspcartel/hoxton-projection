@@ -138,6 +138,8 @@
   .affix.pre input { padding-left: 24px; }
   .affix.post span { right: 11px; }
   .affix.post input { padding-right: 30px; }
+  .affix.post.years input { padding-right: 56px; }
+  #contribYearsGroup.inactive { opacity: .55; }
 
   .seg { display: flex; border: 1px solid var(--field); border-radius: var(--radius); overflow: hidden; }
   .seg button {
@@ -298,6 +300,8 @@
   .data-table tbody tr { border-bottom: 1px solid var(--border); }
   .data-table tbody tr:nth-child(even) { background: #FAFBFD; }
   .data-table tbody tr:hover { background: var(--navy-tint); }
+  .data-table tbody tr.stop-row td { border-top: 2px dashed var(--red); }
+  .stop-tag { font-size: 0.7rem; font-weight: 700; color: var(--red); margin-left: 6px; text-transform: uppercase; letter-spacing: .04em; }
   .data-table tbody td { padding: 8px 12px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
   .data-table tbody td:first-child { text-align: left; font-weight: 600; color: var(--ink); }
   .data-table .yr-sub { font-weight: 400; color: var(--subtle); }
@@ -387,6 +391,11 @@
             <button type="button" id="freq-annual" aria-pressed="false" onclick="setFrequency('annual')">Annually</button>
           </div>
           <span class="hint">Savings are added at the start of each year, before that year's growth.</span>
+        </div>
+        <div class="form-group full" id="contribYearsGroup">
+          <label for="contribYears">Keep saving for <span class="opt">(optional)</span></label>
+          <div class="affix post years"><input type="number" id="contribYears" min="1" max="30" placeholder="Every year" inputmode="numeric"><span>years</span></div>
+          <span class="hint">Leave blank to save every year. After saving stops, the money stays invested and keeps growing.</span>
         </div>
       </div>
     </div>
@@ -782,6 +791,8 @@ function readInputs() {
   const horizon = parseInt($('horizonYears').value);
   const initialInvest  = num('initialInvestment');
   const regularContrib = num('regularContrib');
+  const cyRaw = $('contribYears').value.trim();
+  const contribYearsIn = cyRaw === '' ? NaN : parseInt(cyRaw);
   const r = parseFloat($('estimatedReturn').value);
   const total = Object.values(allocations).reduce((a, b) => a + b, 0);
   const checks = {
@@ -790,12 +801,19 @@ function readInputs() {
     alloc: total === 100,
     mode: currentMode === 'historical' || !isNaN(r),
   };
+  // Years of saving: blank = every year; otherwise 1 to the full horizon
+  const contribYearsOk = cyRaw === '' || !(regularContrib > 0) ||
+    (contribYearsIn >= 1 && (!(horizon >= 1) || contribYearsIn <= horizon));
   const errors = [];
   if (!checks.horizon) errors.push('Enter between 1 and 30 years to invest.');
   if (!checks.money)   errors.push('Enter a lump sum, a regular saving, or both.');
   if (!checks.alloc)   errors.push(total > 100 ? `The portfolio mix adds up to ${total}%; bring it down to 100%.` : `The portfolio mix adds up to ${total}%; it needs to reach 100%.`);
   if (!checks.mode)    errors.push('Enter an assumed yearly return.');
-  return { checks, errors, horizon, initialInvest: initialInvest > 0 ? initialInvest : 0, regularContrib: regularContrib > 0 ? regularContrib : 0, r };
+  if (!contribYearsOk) errors.push(contribYearsIn > horizon
+    ? `"Keep saving for" is ${contribYearsIn} years, longer than the ${horizon} years invested. Shorten it or leave it blank.`
+    : '"Keep saving for" needs to be at least 1 year, or blank to save every year.');
+  const contribYears = (cyRaw === '' || isNaN(contribYearsIn)) ? horizon : Math.min(contribYearsIn, horizon);
+  return { checks, errors, horizon, contribYears, initialInvest: initialInvest > 0 ? initialInvest : 0, regularContrib: regularContrib > 0 ? regularContrib : 0, r };
 }
 
 function refreshChecklist() {
@@ -803,6 +821,7 @@ function refreshChecklist() {
   document.querySelectorAll('#checklist li').forEach(li => li.classList.toggle('ok', !!checks[li.dataset.check]));
   $('step1').classList.toggle('done', checks.horizon && checks.money);
   $('step3').classList.toggle('done', checks.mode);
+  $('contribYearsGroup').classList.toggle('inactive', !(num('regularContrib') > 0));
   $('horizonYears').classList.toggle('invalid', $('horizonYears').value !== '' && !checks.horizon);
 }
 
@@ -835,6 +854,8 @@ function calculate(live = false) {
   const initialInvest  = inp.initialInvest;
   const regularContrib = inp.regularContrib;
   const annualContrib  = frequency === 'monthly' ? regularContrib * 12 : regularContrib;
+  const contribYears   = annualContrib > 0 ? inp.contribYears : horizon;
+  const stopsEarly     = annualContrib > 0 && contribYears < horizon;
 
   // Build annual returns array
   let annualReturns = [];
@@ -864,8 +885,9 @@ function calculate(live = false) {
   let totalContributed = initialInvest;
   for (let i = 0; i < horizon; i++) {
     const r = annualReturns[i] / 100;
-    value += annualContrib;
-    totalContributed += annualContrib;
+    const payIn = i < contribYears ? annualContrib : 0;   // saving stops after contribYears
+    value += payIn;
+    totalContributed += payIn;
     const growthAmt = value * r;
     value = value * (1 + r);
     portfolioValues.push(Math.round(value));
@@ -877,7 +899,8 @@ function calculate(live = false) {
       marketYear: marketYears[i] || null,
       age: ageArr[i],
       ret: annualReturns[i],
-      contrib: (i === 0 ? initialInvest : 0) + annualContrib,
+      contrib: (i === 0 ? initialInvest : 0) + payIn,
+      stopRow: stopsEarly && i === contribYears,
       growth: growthAmt,
       value,
     });
@@ -896,13 +919,14 @@ function calculate(live = false) {
   $('emptyState').style.display = 'none';
   $('resultsContent').style.display = 'flex';
 
-  const subtitle = (clientAge ? `Age ${clientAge} today · ` : '') + `${horizon}-year horizon`;
+  const subtitle = (clientAge ? `Age ${clientAge} today · ` : '') + `${horizon}-year horizon` +
+    (stopsEarly ? ` · saving for the first ${contribYears} year${contribYears === 1 ? '' : 's'}` : '');
   $('resultClientName').textContent = clientName;
   $('resultSubtitle').textContent   = subtitle;
   $('resultModeBadge').textContent  = modeLabel;
 
   const investedSub = (initialInvest > 0 ? `${fmtFull(initialInvest)} lump sum` : 'No lump sum') +
-    (annualContrib > 0 ? ` + ${fmt(annualContrib)} a year` : '');
+    (annualContrib > 0 ? ` + ${fmt(annualContrib)} a year` + (stopsEarly ? ` for ${contribYears} year${contribYears === 1 ? '' : 's'}` : '') : '');
   const finalSub = clientAge ? `At age ${clientAge + horizon}, after ${horizon} years` : `After ${horizon} years`;
   const growthSub = `${pct(growthPct)} on what was paid in`;
   const avgSub = currentMode === 'historical'
@@ -949,9 +973,30 @@ function calculate(live = false) {
   });
   const fontBase = { family: "'Public Sans', Arial, sans-serif", size: 11 };
 
+  const stopLine = {
+    id: 'stopLine',
+    afterDatasetsDraw(chart) {
+      if (!stopsEarly) return;
+      const { ctx, chartArea, scales } = chart;
+      const x = scales.x.getPixelForValue(contribYears - 1);
+      ctx.save();
+      ctx.strokeStyle = C.red; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(x, chartArea.top); ctx.lineTo(x, chartArea.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "700 11px 'Public Sans', Arial, sans-serif";
+      const text = `Saving stops after year ${contribYears}`;
+      const w = ctx.measureText(text).width;
+      const tx = Math.min(x + 6, chartArea.right - w - 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(tx - 3, chartArea.top + 2, w + 6, 16);
+      ctx.fillStyle = C.red; ctx.textBaseline = 'top'; ctx.fillText(text, tx, chartArea.top + 4);
+      ctx.restore();
+    }
+  };
+
   if (growthChartInstance) growthChartInstance.destroy();
   growthChartInstance = new Chart($('growthChart'), {
     type: 'line',
+    plugins: [stopLine],
     data: {
       labels,
       datasets: [
@@ -1012,8 +1057,8 @@ function calculate(live = false) {
     `<th>Year</th>${hist ? '<th>Market year</th>' : ''}<th>Age</th><th>Return</th><th>Paid in</th><th>Growth</th><th>Value at year end</th>`;
   $('dataTableBody').innerHTML = rows.map(r => {
     const isPos = r.ret >= 0;
-    return `<tr>
-      <td>Year ${r.year} <span class="yr-sub">(${r.calYear})</span></td>
+    return `<tr${r.stopRow ? ' class="stop-row"' : ''}>
+      <td>Year ${r.year} <span class="yr-sub">(${r.calYear})</span>${r.stopRow ? '<span class="stop-tag">Saving stopped</span>' : ''}</td>
       ${hist ? `<td>${r.marketYear}</td>` : ''}
       <td>${r.age ? r.age : '—'}</td>
       <td><span class="return-badge ${isPos ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
@@ -1052,8 +1097,8 @@ function printReport() {
     </tr>`).join('');
 
   const yrHead = `<th class="l">Year</th>${R.hist ? '<th>Market year</th>' : ''}<th>Age</th><th>Return</th><th>Paid in</th><th>Growth</th><th>Value at year end</th>`;
-  const yrRows = R.rows.map(r => `<tr>
-      <td class="l">Year ${r.year} (${r.calYear})</td>
+  const yrRows = R.rows.map(r => `<tr${r.stopRow ? ' class="stop"' : ''}>
+      <td class="l">Year ${r.year} (${r.calYear})${r.stopRow ? ' <span class="stop-tag">Saving stopped</span>' : ''}</td>
       ${R.hist ? `<td>${r.marketYear}</td>` : ''}
       <td>${r.age ? r.age : '—'}</td>
       <td><span class="badge ${r.ret >= 0 ? 'pos' : 'neg'}">${pct(r.ret)}</span></td>
@@ -1139,6 +1184,8 @@ function printReport() {
   .yr tbody td.l { font-weight: 600; color: #0B1A2E; }
   .yr tbody tr:nth-child(even) { background: #FAFBFD; }
   .yr tfoot td { background: #F4F6FA; border-top: 2px solid #0A3161; font-weight: 700; color: #0B1A2E; padding: 6px 8px; }
+  .yr tr.stop td { border-top: 1.5px dashed #B31942; }
+  .stop-tag { font-size: 6.5pt; font-weight: 700; color: #B31942; text-transform: uppercase; letter-spacing: .04em; }
   .badge { font-size: 7.3pt; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
   .badge.pos { background: #E6F2EB; color: #1E6B43; } .badge.neg { background: #FBE6EC; color: #B31942; }
   td.pos { color: #1E6B43; } td.neg { color: #B31942; }
@@ -1217,7 +1264,7 @@ $('yearNow').textContent = new Date().getFullYear();
 $('brandLogo').addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 buildAllocationRows();
 populateYearDropdown();
-['clientName', 'clientAge', 'horizonYears', 'initialInvestment', 'regularContrib', 'estimatedReturn'].forEach(id =>
+['clientName', 'clientAge', 'horizonYears', 'initialInvestment', 'regularContrib', 'contribYears', 'estimatedReturn'].forEach(id =>
   $(id).addEventListener('input', () => { if (id === 'horizonYears') updateHistYearsInfo(); onInputChanged(); }));
 // Money fields: show thousands separators once the user leaves the box
 document.querySelectorAll('[data-money]').forEach(el => {
